@@ -8,67 +8,105 @@ BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 
 # LAYER 1: RULE-BASED
-
 WHITELIST = {
     # International
     'google.com', 'youtube.com', 'facebook.com', 'instagram.com',
     'twitter.com', 'x.com', 'wikipedia.org', 'github.com',
-    'tokopedia.com', 'shopee.co.id', 'gojek.com', 'grab.com',
-    'bca.co.id', 'mandiri.co.id', 'bni.co.id', 'bri.co.id',
+    'linkedin.com', 'reddit.com', 'stackoverflow.com',
+    'whatsapp.com', 'telegram.org', 'discord.com',
+    'apple.com', 'microsoft.com', 'amazon.com',
+    'netflix.com', 'spotify.com', 'twitch.tv',
+    'zoom.us', 'slack.com', 'notion.so', 'figma.com',
+    'dropbox.com', 'drive.google.com', 'docs.google.com',
 
-    # Media & berita
+    # E-commerce & Fintech Indonesia
+    'tokopedia.com', 'shopee.co.id', 'bukalapak.com',
+    'lazada.co.id', 'blibli.com', 'zalora.co.id',
+    'jd.id', 'orami.co.id', 'bhinneka.com', 'ralali.com',
+    'gojek.com', 'grab.com', 'traveloka.com', 'tiket.com',
+    'ovo.id', 'dana.id', 'linkaja.id', 'gopay.co.id',
+    'jenius.com', 'flip.id', 'bibit.id', 'ajaib.co.id',
+
+    # Perbankan Indonesia
+    'bca.co.id', 'mandiri.co.id', 'bni.co.id', 'bri.co.id',
+    'cimbniaga.co.id', 'permatabank.com', 'danamon.co.id',
+    'ocbcnisp.com', 'btn.co.id', 'bsm.co.id',
+    'klikbca.com', 'ibank.klikbca.com',
+
+    # Media & Berita Indonesia
     'detik.com', 'kompas.com', 'tribunnews.com', 'liputan6.com',
     'cnnindonesia.com', 'tempo.co', 'okezone.com', 'republika.co.id',
     'antaranews.com', 'kumparan.com', 'tirto.id', 'idntimes.com',
+    'bisnis.com', 'cnbcindonesia.com', 'merdeka.com',
+    'suara.com', 'grid.id', 'kapanlagi.com',
 
     # Edukasi
-    'skilvul.com', 'dicoding.com', 'zenius.net', 'ruangguru.com',
-    'coursera.org', 'udemy.com', 'khan academy.org', 'https://sipadu.politala.ac.id/',
-
-    # E-commerce Indonesia
-    'bukalapak.com', 'lazada.co.id', 'blibli.com', 'zalora.co.id',
-    'jd.id', 'orami.co.id',
-
-    # Fintech & bank Indonesia
-    'ovo.id', 'dana.id', 'linkaja.id', 'jenius.com', 'gopay.co.id',
-    'cimbniaga.co.id', 'permatabank.com', 'danamon.co.id',
+    'dicoding.com', 'ruangguru.com', 'zenius.net', 'skilvul.com',
+    'coursera.org', 'udemy.com', 'khanacademy.org',
+    'edx.org', 'duolingo.com', 'quizlet.com',
+    'kemdikbud.go.id', 'belajar.kemdikbud.go.id',
 
     # Pemerintah Indonesia (.go.id)
-    'kominfo.go.id', 'kemdikbud.go.id', 'bssn.go.id',
-    'kemenkeu.go.id', 'pajak.go.id', 'bpjs-kesehatan.go.id',
-    'polri.go.id', 'kpu.go.id',
+    'kominfo.go.id', 'bssn.go.id', 'kemenkeu.go.id',
+    'pajak.go.id', 'bpjs-kesehatan.go.id', 'polri.go.id',
+    'kpu.go.id', 'bpk.go.id', 'kemenkes.go.id',
+    'covid19.go.id', 'indonesia.go.id', 'lapor.go.id',
+
+    # Teknologi & Developer
+    'npmjs.com', 'pypi.org', 'hub.docker.com',
+    'gitlab.com', 'bitbucket.org', 'heroku.com',
+    'vercel.com', 'netlify.com', 'cloudflare.com',
+    'aws.amazon.com', 'console.cloud.google.com',
+    'portal.azure.com', 'digitalocean.com',
+
+    # Kesehatan & Utilitas
+    'alodokter.com', 'halodoc.com', 'klikdokter.com',
+    'pln.co.id', 'telkom.co.id', 'indosat.com',
+    'xl.co.id', 'tri.co.id', 'smartfren.com',
 }
 
+# BLACKLIST
 BLACKLIST = {
     'sbobet.com', 'rgobet.com', '188bet.com',
+    'w88.com', 'bet365.com',
 }
 
+# Regex untuk mendeteksi URL judol
 GAMBLING_REGEX = re.compile(
     r'(slot[-_]?gacor|togel|sbobet|casino|poker[-_]?online|'
     r'judi[-_]?online|maxwin|scatter[-_]?hitam|rtp[-_]?live|'
-    r'bandar[-_]?bola|agen[-_]?slot|bonus[-_]?new[-_]?member)',
+    r'bandar[-_]?bola|agen[-_]?slot|bonus[-_]?new[-_]?member|'
+    r'slot[-_]?zeus|gates[-_]?of[-_]?olympus|sweet[-_]?bonanza|'
+    r'mahjong[-_]?ways|starlight[-_]?princess|slot[-_]?pragmatic|'
+    r'slot[-_]?pg|idn[-_]?poker|dominoqq|bandarq|slot[-_]?88|'
+    r'slot[-_]?777|bocoran[-_]?slot|pola[-_]?gacor)',
     re.IGNORECASE
 )
 
+# Regex phishing
 PHISHING_REGEX = re.compile(
     r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'
-    r'@|'
-    r'[a-z0-9]{20,}\.(xyz|tk|ml|ga|cf|gq))',
+    r'@|'  
+    r'[a-z0-9]{20,}\.(xyz|tk|ml|ga|cf|gq))', 
     re.IGNORECASE
 )
 
-# THRESHOLD CONFIDENCE
-CONFIDENCE_THRESHOLD = 70.0
+# THRESHOLD & KONSTANTA
+CONFIDENCE_THRESHOLD = 60.0
 
-IF_ANOMALY_BOOST = 15.0
+IF_ANOMALY_BOOST = 10.0 
+
+IF_OVERRIDE_THRESHOLD = 80.0
 
 
 class NetraPredictor:
     LABEL_MAP = {0: 'aman', 1: 'phishing', 2: 'judi_online'}
+
     COLOR_MAP = {
         'aman':        '#22c55e',
         'phishing':    '#ef4444',
-        'judi_online': '#f97316'
+        'judi_online': '#f97316',
+        'suspicious':  '#f59e0b',
     }
 
     FEATURE_COLUMNS = [
@@ -77,15 +115,17 @@ class NetraPredictor:
         'path_depth', 'has_query', 'has_suspicious_tld', 'has_ip',
         'has_phishing_keyword', 'has_gambling_keyword', 'has_brand_spoofing',
         'subdomain_length', 'subdomain_count', 'domain_entropy',
-        'special_chars', 'path_length'
+        'special_chars', 'path_length', 'digit_ratio_url', 'has_port', 'has_redirect', 
+        'consonant_ratio', 'query_length', 'query_params', 'has_fragment'
     ]
 
     def __init__(self):
-        print("Loading NETRA models v2.0...")
+        print("Loading NETRA models v2.1 (fixed)...")
         self._load_supervised()
         self._load_unsupervised()
 
     def _load_supervised(self):
+        # Load model supervised (Hybrid RF+LR)
         try:
             self.hybrid_model = joblib.load(
                 os.path.join(MODELS_DIR, 'hybrid_model.pkl')
@@ -97,11 +137,12 @@ class NetraPredictor:
             self.supervised_loaded = False
 
     def _load_unsupervised(self):
+        # Load model unsupervised (Isolation Forest)
         try:
             self.iso_forest = joblib.load(
                 os.path.join(MODELS_DIR, 'isolation_forest.pkl')
             )
-            self.scaler_if  = joblib.load(
+            self.scaler_if = joblib.load(
                 os.path.join(MODELS_DIR, 'scaler_isolation.pkl')
             )
             self.unsupervised_loaded = True
@@ -110,7 +151,8 @@ class NetraPredictor:
             print("  ⚠️  Isolation Forest tidak ditemukan!")
             self.unsupervised_loaded = False
 
-    # LAYER 1: Cek Rule-Based
+    # LAYER 1: Rule-Based
+
     def _cek_whitelist(self, url):
         url_lower = url.lower()
         return any(domain in url_lower for domain in WHITELIST)
@@ -119,35 +161,53 @@ class NetraPredictor:
         url_lower = url.lower()
         return any(domain in url_lower for domain in BLACKLIST)
 
+    def _ekstrak_domain_utama(self, url):
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            hostname = parsed.netloc.lower().replace('www.', '')
+            parts = hostname.split('.')
+            if len(parts) >= 2:
+                return '.'.join(parts[-2:])
+            return hostname
+        except Exception:
+            return ''
+
     # LAYER 2: Supervised ML
+
     def _prediksi_supervised(self, features_dict):
         features_values = [[features_dict[col] for col in self.FEATURE_COLUMNS]]
 
+        # predict() → angka label (0, 1, atau 2)
         label_angka = self.hybrid_model.predict(features_values)[0]
-        proba       = self.hybrid_model.predict_proba(features_values)[0]
-        confidence  = float(proba[label_angka]) * 100
+
+        # predict_proba() → array probabilitas
+        # Index 0=aman, 1=phishing, 2=judi_online
+        proba = self.hybrid_model.predict_proba(features_values)[0]
+
+        # Confidence = probabilitas label yang dipilih × 100
+        confidence = float(proba[label_angka]) * 100
 
         return int(label_angka), confidence, proba
 
-    # LAYER 3: Isolation Forest (Unsupervised)
+    # LAYER 3: Isolation Forest
+
     def _prediksi_isolation_forest(self, features_dict):
         if not self.unsupervised_loaded:
             return False, 0.0, 0.0
 
-        fitur_array = np.array([[features_dict[col] for col in self.FEATURE_COLUMNS]])
-
+        fitur_array  = np.array([[features_dict[col] for col in self.FEATURE_COLUMNS]])
         fitur_scaled = self.scaler_if.transform(fitur_array)
 
-        # Prediksi: -1 = anomali, +1 = normal
+        # predict(): -1 = anomali (mencurigakan), +1 = normal
         prediksi = self.iso_forest.predict(fitur_scaled)[0]
 
-        # Raw anomaly score
-        # Semakin negatif = semakin anomali
+        # score_samples(): semakin negatif = semakin anomali
         skor_raw = self.iso_forest.score_samples(fitur_scaled)[0]
 
-        # Normalisasi skor ke 0-100
+        # Normalisasi skor ke rentang 0-100
+        # -0.5 → 100 (sangat anomali), 0.1 → 0 (sangat normal)
         skor_clipped = np.clip(skor_raw, -0.5, 0.1)
-        # Map: -0.5 → 100 (sangat anomali), 0.1 → 0 (sangat normal)
         skor_normal  = (0.1 - skor_clipped) / (0.1 - (-0.5)) * 100
         skor_normal  = round(float(skor_normal), 1)
 
@@ -155,10 +215,10 @@ class NetraPredictor:
 
         return is_anomali, float(skor_raw), skor_normal
 
-    # FUNGSI UTAMA: PREDICT
-    def predict(self, url):
+    # FUNGSI UTAMA
 
-        # Validasi & normalisasi
+    def predict(self, url):
+        # Validasi input
         if not url or not isinstance(url, str):
             return self._format('aman', 50.0, 'error',
                                 'URL tidak valid', False, 0)
@@ -168,12 +228,13 @@ class NetraPredictor:
             url = 'http://' + url
 
         # Layer 1A: Whitelist
-        if self._cek_whitelist(url):
+        domain_utama = self._ekstrak_domain_utama(url)
+        if domain_utama in WHITELIST or self._cek_whitelist(url):
             return self._format(
                 kategori   = 'aman',
                 confidence = 99.0,
                 method     = 'rule_based_whitelist',
-                detail     = 'Domain terpercaya (whitelist)',
+                detail     = f'Domain terpercaya: {domain_utama}',
                 is_anomali = False,
                 if_score   = 0
             )
@@ -208,53 +269,61 @@ class NetraPredictor:
                 kategori   = 'phishing',
                 confidence = 92.0,
                 method     = 'rule_based_regex',
-                detail     = 'Pola phishing terdeteksi',
+                detail     = 'Pola phishing kritis terdeteksi (IP/simbol @)',
                 is_anomali = True,
                 if_score   = 88
             )
 
-        # Ekstrak fitur
+        # Ekstrak fitur URL untuk ML
         features_dict = extract_features(url)
 
         # Layer 2: Supervised ML
         if not self.supervised_loaded:
             return self._format('aman', 50.0, 'fallback',
-                                'Model tidak tersedia', False, 0)
+                                'Model tidak tersedia, tidak bisa memverifikasi', False, 0)
 
         label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
         kategori = self.LABEL_MAP[label_angka]
 
         # Layer 3: Isolation Forest
-        if_aktif   = False
         is_anomali = False
         if_score   = 0.0
+        if_aktif   = False
         if_detail  = ''
 
         if confidence_sv < CONFIDENCE_THRESHOLD and self.unsupervised_loaded:
-            if_aktif             = True
+            if_aktif   = True
             is_anomali, skor_raw, if_score = self._prediksi_isolation_forest(features_dict)
 
             if is_anomali:
                 if kategori == 'aman':
-                    kategori   = 'phishing'
-                    confidence_sv = 50.0 + (if_score * 0.3)
-                    if_detail  = f'IF override: URL anomali (score: {if_score:.0f})'
+                    if if_score > IF_OVERRIDE_THRESHOLD:
+                        kategori      = 'suspicious'
+                        confidence_sv = 45.0
+                        if_detail     = (f'IF: anomali tinggi (score: {if_score:.0f}), '
+                                         f'perlu verifikasi manual')
+                    else:
+                        if_detail = (f'IF: sedikit anomali (score: {if_score:.0f}), '
+                                     f'tidak cukup untuk override → tetap aman')
+
                 else:
-                    confidence_sv = min(confidence_sv + IF_ANOMALY_BOOST, 98.0)
-                    if_detail  = f'IF konfirmasi anomali (score: {if_score:.0f})'
+                    confidence_sv = min(confidence_sv + IF_ANOMALY_BOOST, 95.0)
+                    if_detail     = f'IF konfirmasi: anomali (score: {if_score:.0f})'
+
             else:
                 if kategori != 'aman':
-                    confidence_sv = max(confidence_sv - 10.0, 51.0)
-                    if_detail  = f'IF: URL terlihat normal (score: {if_score:.0f})'
+                    confidence_sv = max(confidence_sv - 15.0, 45.0)
+                    if_detail     = f'IF: URL terlihat normal (score: {if_score:.0f}), confidence diturunkan'
                 else:
-                    if_detail  = f'IF: normal (score: {if_score:.0f})'
+                    if_detail = f'IF: normal (score: {if_score:.0f})'
 
         if if_aktif:
             method = 'hybrid_supervised_unsupervised'
         else:
             method = 'ml_supervised_only'
 
-        detail = f'RF+LR Ensemble | Prob: {proba.round(2).tolist()}'
+        # Detail log untuk debugging
+        detail = f'RF+LR Ensemble | Prob aman:{proba[0]:.2f} phishing:{proba[1]:.2f} judi:{proba[2]:.2f}'
         if if_detail:
             detail += f' | {if_detail}'
 
@@ -267,18 +336,20 @@ class NetraPredictor:
             if_score   = if_score
         )
 
-    # FORMAT RESPONSE
     def _format(self, kategori, confidence, method, detail='',
                 is_anomali=False, if_score=0.0):
+        berbahaya = kategori in ('phishing', 'judi_online')
+
         return {
-            'kategori'        : kategori,
-            'confidence'      : round(confidence, 1),
-            'berbahaya'       : kategori != 'aman',
-            'warna'           : self.COLOR_MAP.get(kategori, '#6b7280'),
-            'method'          : method,
-            'detail'          : detail,
-            'is_anomali'      : is_anomali,
-            'anomaly_score'   : round(if_score, 1) # 0-100, semakin tinggi = semakin mencurigakan
+            'kategori'     : kategori,
+            'confidence'   : round(confidence, 1),
+            'berbahaya'    : berbahaya,
+            'warna'        : self.COLOR_MAP.get(kategori, '#6b7280'),
+            'method'       : method,
+            'detail'       : detail,
+            'is_anomali'   : is_anomali,
+            'anomaly_score': round(if_score, 1),
         }
+
 
 predictor = NetraPredictor()
