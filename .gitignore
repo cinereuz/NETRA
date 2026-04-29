@@ -1,0 +1,18 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Model files
+ml-backend/models/*.pkl
+
+# Dataset mentah
+dataset/*.csv
+dataset/*.zip
+
+# VS Code settings personal
+.vscode/settings.json
+
+# File sistem
+.DS_Store
+Thumbs.db

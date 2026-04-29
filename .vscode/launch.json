@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Flask API",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ml-backend/app.py",
+      "env": {
+        "FLASK_ENV": "development",
+        "FLASK_DEBUG": "1"
+      },
+      "jinja": true,
+      "justMyCode": true
+    }
+  ]
+}
