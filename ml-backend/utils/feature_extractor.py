@@ -1,51 +1,24 @@
 import re
 import math
+import json
+from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 # Keyword Lists
-# Kata kunci yang sering muncul di URL phishing
-PHISHING_KEYWORDS = [
-    'login', 'signin', 'verify', 'secure', 'account',
-    'update', 'confirm', 'banking', 'paypal', 'password',
-    'credential', 'wallet', 'suspended', 'unusual', 'alert',
-    'validate', 'authenticate', 'recover', 'reset', 'unlock',
-    'webscr', 'cmd=', 'dispatch=', 'checkout',
-]
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_PATH = BASE_DIR / 'data' / 'config.json'
 
-# Kata kunci yang sering muncul di URL judol
-GAMBLING_KEYWORDS = [
-    'slot', 'togel', 'poker', 'casino', 'bet', 'judi',
-    'gacor', 'jackpot', 'sbobet', 'maxwin', 'scatter',
-    'pragmatic', 'pgsoft', 'rtp', 'spin', 'bonus',
-    'zeus', 'olympus', 'bonanza', 'mahjong', 'starlight',
-    'domino', 'bandarq', 'ceme', 'capsa', 'parlay',
-]
+with open(CONFIG_PATH, 'r') as f:
+    config_data = json.load(f)
 
-# Brand besar yang sering dipalsukan oleh phisher
-TRUSTED_BRANDS = [
-    'paypal', 'google', 'facebook', 'apple', 'amazon',
-    'microsoft', 'netflix', 'instagram', 'whatsapp', 'bank',
-    'bca', 'mandiri', 'bni', 'bri', 'tokopedia', 'shopee',
-    'gojek', 'grab', 'ovo', 'dana',
-]
-
-# TLD yang jarang dipakai situs resmi, sering dipakai phisher
-SUSPICIOUS_TLDS = {
-    'xyz', 'tk', 'ml', 'ga', 'cf', 'gq', 'pw',
-    'top', 'click', 'link', 'online', 'site', 'club',
-    'bid', 'loan', 'win', 'download', 'racing',
-    'stream', 'gdn', 'men', 'accountant',
-}
-
-# TLD yang umum dipakai situs resmi
-LEGITIMATE_TLDS = {
-    'com', 'id', 'org', 'net', 'edu', 'gov',
-    'co.id', 'go.id', 'ac.id', 'sch.id',
-}
-
+PHISHING_KEYWORDS = config_data['KEYWORDS']['PHISHING']
+GAMBLING_KEYWORDS = config_data['KEYWORDS']['GAMBLING']
+TRUSTED_BRANDS    = config_data['KEYWORDS']['TRUSTED_BRANDS']
+SUSPICIOUS_TLDS   = set(config_data['DOMAINS']['SUSPICIOUS_TLDS'])
+LEGITIMATE_TLDS   = set(config_data['DOMAINS']['LEGITIMATE_TLDS'])
+MULTI_LEVEL_TLDS   = set(config_data['DOMAINS']['MULTI_LEVEL_TLDS'])
 
 # Fungsi Utilitas
-
 def get_entropy(text):
     if not text:
         return 0.0
@@ -89,9 +62,22 @@ def get_domain_info(url):
         hostname = hostname.replace('www.', '')
         parts    = hostname.split('.')
 
-        tld       = parts[-1] if len(parts) > 0 else ''
-        domain    = parts[-2] if len(parts) > 1 else ''
-        subdomain = '.'.join(parts[:-2]) if len(parts) > 2 else ''
+        if len(parts) >= 3:
+            kemungkinan_tld2 = parts[-2] + '.' + parts[-1]
+            if kemungkinan_tld2 in MULTI_LEVEL_TLDS:
+                tld       = kemungkinan_tld2
+                domain    = parts[-3]
+                subdomain = '.'.join(parts[:-3]) if len(parts) > 3 else ''
+            else:
+                tld       = parts[-1]
+                domain    = parts[-2]
+                subdomain = '.'.join(parts[:-2]) if len(parts) > 2 else ''
+        elif len(parts) == 2:
+            tld       = parts[-1]
+            domain    = parts[-2]
+            subdomain = ''
+        else:
+            tld = domain = subdomain = ''
 
         return {
             'scheme'   : parsed.scheme,
@@ -114,7 +100,6 @@ def get_domain_info(url):
 
 
 # Fungsi Utama
-
 def extract_features(url):
     info      = get_domain_info(url)
     url_lower = url.lower()
@@ -129,7 +114,8 @@ def extract_features(url):
     double_slash     = url_tanpa_scheme.count('//')
     digit_count = sum(1 for c in info['domain'] if c.isdigit())
     domain_length = len(info['domain'])
-    path_depth = info['path'].count('/')
+    _path_segmen = [s for s in info['path'].strip('/').split('/') if s]
+    path_depth   = len(_path_segmen)
     has_query = 1 if info['query'] else 0
     has_suspicious_tld = 1 if info['tld'] in SUSPICIOUS_TLDS else 0
     has_ip = 1 if re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', url) else 0
@@ -145,7 +131,6 @@ def extract_features(url):
     has_brand_spoofing = 1 if (brand_di_url and not brand_di_domain_legit) else 0
 
     # Fitur Subdomain
-
     subdomain_length = len(info['subdomain'])
     if info['subdomain']:
         subdomain_count = info['subdomain'].count('.') + 1
@@ -154,7 +139,7 @@ def extract_features(url):
 
     # Fitur Statistik
     domain_entropy = get_entropy(info['domain'])
-    special_chars = len(re.findall(r'[%=&?+]', url))
+    special_chars = len(re.findall(r'[%=&?+@\-$!*]', url))
     path_length = len(info['path'])
     total_digit   = sum(1 for c in url if c.isdigit())
     digit_ratio_url = round(total_digit / url_length, 4) if url_length > 0 else 0.0

@@ -1,6 +1,6 @@
 import requests
 
-url_test = "https://edlink.id/panel"
+url_test = "https://googgle.com/"
 
 response = requests.post(
     "http://localhost:5000/predict",

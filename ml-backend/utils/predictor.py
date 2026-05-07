@@ -1,103 +1,31 @@
 import joblib
 import os
 import re
+import json
+from pathlib import Path
 import numpy as np
 from .feature_extractor import extract_features
 
-BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODELS_DIR = BASE_DIR / 'models'
+CONFIG_PATH = BASE_DIR / 'data' / 'config.json'
 
-# LAYER 1: RULE-BASED
-WHITELIST = {
-    # International
-    'google.com', 'youtube.com', 'facebook.com', 'instagram.com',
-    'twitter.com', 'x.com', 'wikipedia.org', 'github.com',
-    'linkedin.com', 'reddit.com', 'stackoverflow.com',
-    'whatsapp.com', 'telegram.org', 'discord.com',
-    'apple.com', 'microsoft.com', 'amazon.com',
-    'netflix.com', 'spotify.com', 'twitch.tv',
-    'zoom.us', 'slack.com', 'notion.so', 'figma.com',
-    'dropbox.com', 'drive.google.com', 'docs.google.com',
+# Load Configuration
+with open(CONFIG_PATH, 'r') as f:
+    config_data = json.load(f)
 
-    # E-commerce & Fintech Indonesia
-    'tokopedia.com', 'shopee.co.id', 'bukalapak.com',
-    'lazada.co.id', 'blibli.com', 'zalora.co.id',
-    'jd.id', 'orami.co.id', 'bhinneka.com', 'ralali.com',
-    'gojek.com', 'grab.com', 'traveloka.com', 'tiket.com',
-    'ovo.id', 'dana.id', 'linkaja.id', 'gopay.co.id',
-    'jenius.com', 'flip.id', 'bibit.id', 'ajaib.co.id',
+# LAYER 1: RULE-BASED & REGEX
+WHITELIST = set(config_data['DOMAINS']['WHITELIST'])
+BLACKLIST = set(config_data['DOMAINS']['BLACKLIST'])
+MULTI_LEVEL_TLDS = set(config_data['DOMAINS']['MULTI_LEVEL_TLDS'])
 
-    # Perbankan Indonesia
-    'bca.co.id', 'mandiri.co.id', 'bni.co.id', 'bri.co.id',
-    'cimbniaga.co.id', 'permatabank.com', 'danamon.co.id',
-    'ocbcnisp.com', 'btn.co.id', 'bsm.co.id',
-    'klikbca.com', 'ibank.klikbca.com',
-
-    # Media & Berita Indonesia
-    'detik.com', 'kompas.com', 'tribunnews.com', 'liputan6.com',
-    'cnnindonesia.com', 'tempo.co', 'okezone.com', 'republika.co.id',
-    'antaranews.com', 'kumparan.com', 'tirto.id', 'idntimes.com',
-    'bisnis.com', 'cnbcindonesia.com', 'merdeka.com',
-    'suara.com', 'grid.id', 'kapanlagi.com',
-
-    # Edukasi
-    'dicoding.com', 'ruangguru.com', 'zenius.net', 'skilvul.com',
-    'coursera.org', 'udemy.com', 'khanacademy.org',
-    'edx.org', 'duolingo.com', 'quizlet.com',
-    'kemdikbud.go.id', 'belajar.kemdikbud.go.id',
-
-    # Pemerintah Indonesia (.go.id)
-    'kominfo.go.id', 'bssn.go.id', 'kemenkeu.go.id',
-    'pajak.go.id', 'bpjs-kesehatan.go.id', 'polri.go.id',
-    'kpu.go.id', 'bpk.go.id', 'kemenkes.go.id',
-    'covid19.go.id', 'indonesia.go.id', 'lapor.go.id',
-
-    # Teknologi & Developer
-    'npmjs.com', 'pypi.org', 'hub.docker.com',
-    'gitlab.com', 'bitbucket.org', 'heroku.com',
-    'vercel.com', 'netlify.com', 'cloudflare.com',
-    'aws.amazon.com', 'console.cloud.google.com',
-    'portal.azure.com', 'digitalocean.com',
-
-    # Kesehatan & Utilitas
-    'alodokter.com', 'halodoc.com', 'klikdokter.com',
-    'pln.co.id', 'telkom.co.id', 'indosat.com',
-    'xl.co.id', 'tri.co.id', 'smartfren.com',
-}
-
-# BLACKLIST
-BLACKLIST = {
-    'sbobet.com', 'rgobet.com', '188bet.com',
-    'w88.com', 'bet365.com',
-}
-
-# Regex untuk mendeteksi URL judol
-GAMBLING_REGEX = re.compile(
-    r'(slot[-_]?gacor|togel|sbobet|casino|poker[-_]?online|'
-    r'judi[-_]?online|maxwin|scatter[-_]?hitam|rtp[-_]?live|'
-    r'bandar[-_]?bola|agen[-_]?slot|bonus[-_]?new[-_]?member|'
-    r'slot[-_]?zeus|gates[-_]?of[-_]?olympus|sweet[-_]?bonanza|'
-    r'mahjong[-_]?ways|starlight[-_]?princess|slot[-_]?pragmatic|'
-    r'slot[-_]?pg|idn[-_]?poker|dominoqq|bandarq|slot[-_]?88|'
-    r'slot[-_]?777|bocoran[-_]?slot|pola[-_]?gacor)',
-    re.IGNORECASE
-)
-
-# Regex phishing
-PHISHING_REGEX = re.compile(
-    r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'
-    r'@|'  
-    r'[a-z0-9]{20,}\.(xyz|tk|ml|ga|cf|gq))', 
-    re.IGNORECASE
-)
+GAMBLING_REGEX = re.compile(config_data['REGEX_PATTERNS']['GAMBLING'], re.IGNORECASE)
+PHISHING_REGEX = re.compile(config_data['REGEX_PATTERNS']['PHISHING'], re.IGNORECASE)
 
 # THRESHOLD & KONSTANTA
-CONFIDENCE_THRESHOLD = 60.0
-
-IF_ANOMALY_BOOST = 10.0 
-
-IF_OVERRIDE_THRESHOLD = 80.0
-
+CONFIDENCE_THRESHOLD = config_data['THRESHOLDS']['CONFIDENCE']
+IF_ANOMALY_BOOST = config_data['THRESHOLDS']['IF_ANOMALY_BOOST']
+IF_OVERRIDE_THRESHOLD = config_data['THRESHOLDS']['IF_OVERRIDE']
 
 class NetraPredictor:
     LABEL_MAP = {0: 'aman', 1: 'phishing', 2: 'judi_online'}
@@ -152,7 +80,6 @@ class NetraPredictor:
             self.unsupervised_loaded = False
 
     # LAYER 1: Rule-Based
-
     def _cek_whitelist(self, url):
         url_lower = url.lower()
         return any(domain in url_lower for domain in WHITELIST)
@@ -164,17 +91,30 @@ class NetraPredictor:
     def _ekstrak_domain_utama(self, url):
         try:
             from urllib.parse import urlparse
-            parsed = urlparse(url)
+            parsed   = urlparse(url)
             hostname = parsed.netloc.lower().replace('www.', '')
+ 
+            if ':' in hostname:
+                hostname = hostname.split(':')[0]
+ 
             parts = hostname.split('.')
-            if len(parts) >= 2:
-                return '.'.join(parts[-2:])
+ 
+            if len(parts) >= 3:
+                kemungkinan_tld2 = parts[-2] + '.' + parts[-1]
+                if kemungkinan_tld2 in MULTI_LEVEL_TLDS:
+                    return parts[-3] + '.' + kemungkinan_tld2
+                else:
+                    return parts[-2] + '.' + parts[-1]
+ 
+            elif len(parts) == 2:
+                return hostname
+ 
             return hostname
+ 
         except Exception:
             return ''
 
     # LAYER 2: Supervised ML
-
     def _prediksi_supervised(self, features_dict):
         features_values = [[features_dict[col] for col in self.FEATURE_COLUMNS]]
 
@@ -191,7 +131,6 @@ class NetraPredictor:
         return int(label_angka), confidence, proba
 
     # LAYER 3: Isolation Forest
-
     def _prediksi_isolation_forest(self, features_dict):
         if not self.unsupervised_loaded:
             return False, 0.0, 0.0
@@ -216,7 +155,6 @@ class NetraPredictor:
         return is_anomali, float(skor_raw), skor_normal
 
     # FUNGSI UTAMA
-
     def predict(self, url):
         # Validasi input
         if not url or not isinstance(url, str):
@@ -257,7 +195,7 @@ class NetraPredictor:
                 kategori   = 'judi_online',
                 confidence = 95.0,
                 method     = 'rule_based_regex',
-                detail     = f'Keyword judi: "{match_judi.group()}"',
+                detail     = f'Keyword judi terdeteksi: "{match_judi.group()}"',
                 is_anomali = True,
                 if_score   = 90
             )
@@ -274,13 +212,15 @@ class NetraPredictor:
                 if_score   = 88
             )
 
+        # Layer 2: Supervised ML
         # Ekstrak fitur URL untuk ML
         features_dict = extract_features(url)
 
-        # Layer 2: Supervised ML
         if not self.supervised_loaded:
-            return self._format('aman', 50.0, 'fallback',
-                                'Model tidak tersedia, tidak bisa memverifikasi', False, 0)
+            return self._format(
+                'aman', 50.0, 'fallback',
+                'Model tidak tersedia, tidak bisa memverifikasi', False, 0
+            )
 
         label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
         kategori = self.LABEL_MAP[label_angka]
