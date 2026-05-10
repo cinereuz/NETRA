@@ -121,7 +121,19 @@ def extract_features(url):
     has_ip = 1 if re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', url) else 0
 
     # Fitur Keyword
-    has_phishing_keyword = 1 if any(kw in url_lower for kw in PHISHING_KEYWORDS) else 0
+    tld_is_legitimate    = info['tld'] in LEGITIMATE_TLDS
+    domain_subdomain_str = (info['domain'] + ' ' + info['subdomain']).lower()
+    path_query_str       = (info['path'] + ' ' + info['query']).lower()
+    kw_di_domain         = any(kw in domain_subdomain_str for kw in PHISHING_KEYWORDS)
+    kw_di_path           = any(kw in path_query_str for kw in PHISHING_KEYWORDS)
+
+    if kw_di_domain:
+        has_phishing_keyword = 1
+    elif kw_di_path and not tld_is_legitimate:
+        has_phishing_keyword = 1
+    else:
+        has_phishing_keyword = 0
+
     has_gambling_keyword = 1 if any(kw in url_lower for kw in GAMBLING_KEYWORDS) else 0
     brand_di_url           = any(brand in url_lower for brand in TRUSTED_BRANDS)
     brand_di_domain_legit  = any(

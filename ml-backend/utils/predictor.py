@@ -2,6 +2,9 @@ import joblib
 import os
 import re
 import json
+import urllib.request
+import urllib.error  
+import socket
 from pathlib import Path
 import numpy as np
 from .feature_extractor import extract_features
@@ -27,6 +30,18 @@ CONFIDENCE_THRESHOLD = config_data['THRESHOLDS']['CONFIDENCE']
 IF_ANOMALY_BOOST = config_data['THRESHOLDS']['IF_ANOMALY_BOOST']
 IF_OVERRIDE_THRESHOLD = config_data['THRESHOLDS']['IF_OVERRIDE']
 
+# HTTP Check
+# Timeout (berapa lama tunggu server merespons)
+HTTP_TIMEOUT = 5
+ 
+# Status code
+HTTP_BLOCKED_BUT_ALIVE = {401, 403, 405, 406, 429}
+ 
+# User-Agent
+HTTP_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (compatible; NETRA-URLChecker/1.0)',
+}
+
 class NetraPredictor:
     LABEL_MAP = {0: 'aman', 1: 'phishing', 2: 'judi_online'}
 
@@ -35,6 +50,8 @@ class NetraPredictor:
         'phishing':    '#ef4444',
         'judi_online': '#f97316',
         'suspicious':  '#f59e0b',
+        'domain_tidak_ada'    : '#374151',
+        'tidak_dapat_diakses': '#6b7280',
     }
 
     FEATURE_COLUMNS = [
@@ -48,7 +65,7 @@ class NetraPredictor:
     ]
 
     def __init__(self):
-        print("Loading NETRA models v2.1 (fixed)...")
+        print("Loading NETRA models ...")
         self._load_supervised()
         self._load_unsupervised()
 
@@ -113,8 +130,65 @@ class NetraPredictor:
  
         except Exception:
             return ''
+        
+    # LAYER 2: HTTP Reachability Check
+    def _cek_reachability(self, url):
+        try:
+            req = urllib.request.Request(
+                url,
+                headers=HTTP_HEADERS,
+                method='HEAD',
+            )
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+                # Server merespons sukses
+                return {
+                    'is_reachable': True,
+                    'http_status' : resp.status,
+                    'reachability': 'reachable',
+                    'reach_detail': f'Server aktif (HTTP {resp.status})',
+                    'kategori_reach': None,
+                }
+ 
+        except urllib.error.HTTPError as e:
+            # Server ADA dan merespons, tapi dengan kode error
+            return {
+                'is_reachable': True,
+                'http_status' : e.code,
+                'reachability': 'reachable',
+                'reach_detail': f'Server aktif (HTTP {e.code})',
+                'kategori_reach': None,
+            }
+ 
+        except socket.timeout:
+            # Server tidak merespons
+            return {
+                'is_reachable': False,
+                'http_status' : None,
+                'reachability': 'timeout',
+                'reach_detail': f'Server tidak merespons (timeout {HTTP_TIMEOUT}s)',
+                'kategori_reach': 'tidak_dapat_diakses',
+            }
+ 
+        except urllib.error.URLError:
+            # DNS gagal resolve = domain tidak terdaftar / tidak ada
+            return {
+                'is_reachable': False,
+                'http_status' : None,
+                'reachability': 'unreachable',
+                'reach_detail': 'Domain tidak terdaftar atau tidak ditemukan',
+                'kategori_reach': 'domain_tidak_ada',
+            }
+ 
+        except Exception as e:
+            return {
+                'is_reachable': False,
+                'http_status' : None,
+                'reachability': 'error',
+                'reach_detail': f'Gagal memeriksa: {str(e)[:60]}',
+                'kategori_reach': 'tidak_dapat_diakses',
+            }
 
-    # LAYER 2: Supervised ML
+    # LAYER 3: Supervised ML
     def _prediksi_supervised(self, features_dict):
         features_values = [[features_dict[col] for col in self.FEATURE_COLUMNS]]
 
@@ -130,7 +204,7 @@ class NetraPredictor:
 
         return int(label_angka), confidence, proba
 
-    # LAYER 3: Isolation Forest
+    # LAYER 4: Isolation Forest
     def _prediksi_isolation_forest(self, features_dict):
         if not self.unsupervised_loaded:
             return False, 0.0, 0.0
@@ -158,8 +232,15 @@ class NetraPredictor:
     def predict(self, url):
         # Validasi input
         if not url or not isinstance(url, str):
-            return self._format('aman', 50.0, 'error',
-                                'URL tidak valid', False, 0)
+            return self._format(
+                kategori   = 'tidak_dapat_diakses',
+                confidence = 0.0,
+                method     = 'error',
+                detail     = 'URL tidak valid',
+                is_anomali = False,
+                if_score   = 0,
+                reach_info = None,
+            )
 
         url = url.strip()
         if not url.startswith(('http://', 'https://')):
@@ -174,7 +255,8 @@ class NetraPredictor:
                 method     = 'rule_based_whitelist',
                 detail     = f'Domain terpercaya: {domain_utama}',
                 is_anomali = False,
-                if_score   = 0
+                if_score   = 0,
+                reach_info = None,
             )
 
         # Layer 1B: Blacklist
@@ -185,7 +267,8 @@ class NetraPredictor:
                 method     = 'rule_based_blacklist',
                 detail     = 'Domain terblokir (blacklist)',
                 is_anomali = True,
-                if_score   = 100
+                if_score   = 100,
+                reach_info = None,
             )
 
         # Layer 1C: Regex Judi
@@ -197,7 +280,8 @@ class NetraPredictor:
                 method     = 'rule_based_regex',
                 detail     = f'Keyword judi terdeteksi: "{match_judi.group()}"',
                 is_anomali = True,
-                if_score   = 90
+                if_score   = 90,
+                reach_info = None,
             )
 
         # Layer 1D: Regex Phishing
@@ -209,23 +293,43 @@ class NetraPredictor:
                 method     = 'rule_based_regex',
                 detail     = 'Pola phishing kritis terdeteksi (IP/simbol @)',
                 is_anomali = True,
-                if_score   = 88
+                if_score   = 88,
+                reach_info = None,
+            )
+        
+        # Layer 2: HTTP Reachability Check
+        reach_info = self._cek_reachability(url)
+ 
+        if not reach_info['is_reachable']:
+            return self._format(
+                kategori   = reach_info['kategori_reach'],
+                confidence = 0.0,
+                method     = 'http_check',
+                detail     = reach_info['reach_detail'],
+                is_anomali = False,
+                if_score   = 0,
+                reach_info = reach_info,
             )
 
-        # Layer 2: Supervised ML
+        # Layer 3: Supervised ML
         # Ekstrak fitur URL untuk ML
         features_dict = extract_features(url)
 
         if not self.supervised_loaded:
             return self._format(
-                'aman', 50.0, 'fallback',
-                'Model tidak tersedia, tidak bisa memverifikasi', False, 0
+                kategori   = 'tidak_dapat_diakses',
+                confidence = 50.0,
+                method     = 'fallback',
+                detail     = 'Model tidak tersedia',
+                is_anomali = False,
+                if_score   = 0,
+                reach_info = reach_info,
             )
 
         label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
         kategori = self.LABEL_MAP[label_angka]
 
-        # Layer 3: Isolation Forest
+        # Layer 4: Isolation Forest
         is_anomali = False
         if_score   = 0.0
         if_aktif   = False
@@ -273,11 +377,12 @@ class NetraPredictor:
             method     = method,
             detail     = detail,
             is_anomali = is_anomali,
-            if_score   = if_score
+            if_score   = if_score,
+            reach_info = reach_info,
         )
 
     def _format(self, kategori, confidence, method, detail='',
-                is_anomali=False, if_score=0.0):
+                is_anomali=False, if_score=0.0, reach_info=None):
         berbahaya = kategori in ('phishing', 'judi_online')
 
         return {
@@ -289,6 +394,10 @@ class NetraPredictor:
             'detail'       : detail,
             'is_anomali'   : is_anomali,
             'anomaly_score': round(if_score, 1),
+            'is_reachable' : reach_info['is_reachable'] if reach_info else None,
+            'http_status'  : reach_info['http_status']  if reach_info else None,
+            'reachability' : reach_info['reachability'] if reach_info else 'skipped',
+            'reach_detail' : reach_info['reach_detail'] if reach_info else '',
         }
 
 

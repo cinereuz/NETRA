@@ -1,6 +1,6 @@
 import requests
 
-url_test = "https://googgle.com/"
+url_test = "https://sassygirlbooks.schule/"
 
 response = requests.post(
     "http://localhost:5000/predict",
