@@ -42,6 +42,10 @@ HTTP_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (compatible; NETRA-URLChecker/1.0)',
 }
 
+# BRAND + TLD MISMATCH
+GOV_BRANDS      = set(config_data['BRAND_TLD_RULES']['GOV_BRANDS'])
+BUSINESS_BRANDS = set(config_data['BRAND_TLD_RULES']['BUSINESS_BRANDS'])
+
 class NetraPredictor:
     LABEL_MAP = {0: 'aman', 1: 'phishing', 2: 'judi_online'}
 
@@ -131,6 +135,55 @@ class NetraPredictor:
         except Exception:
             return ''
         
+    def _cek_brand_tld_mismatch(self, url):
+        try:
+            from urllib.parse import urlparse
+            parsed   = urlparse(url)
+            hostname = parsed.netloc.lower().replace('www.', '')
+            if ':' in hostname:
+                hostname = hostname.split(':')[0]
+            parts = hostname.split('.')
+
+            if len(parts) >= 3:
+                tld2 = parts[-2] + '.' + parts[-1]
+                if tld2 in MULTI_LEVEL_TLDS:
+                    tld       = tld2
+                    domain    = parts[-3].lower()
+                    subdomain = '.'.join(parts[:-3]).lower()
+                else:
+                    tld       = parts[-1].lower()
+                    domain    = parts[-2].lower()
+                    subdomain = '.'.join(parts[:-2]).lower()
+            elif len(parts) == 2:
+                tld       = parts[-1].lower()
+                domain    = parts[-2].lower()
+                subdomain = ''
+            else:
+                return False, ''
+
+            # Cek brand pemerintah — wajib .go.id
+            for brand in GOV_BRANDS:
+                if brand in domain or brand in subdomain:
+                    if tld != 'go.id':
+                        return True, (
+                            f'Brand pemerintah \'{brand}\' seharusnya .go.id, '
+                            f'bukan .{tld} (Regulasi PANDI)'
+                        )
+
+            # Cek brand badan usaha
+            for brand in BUSINESS_BRANDS:
+                if brand == domain:
+                    if tld not in ('co.id'):
+                        return True, (
+                            f'Brand badan usaha \'{brand}\' seharusnya .co.id, '
+                            f'bukan .{tld} (Regulasi PANDI)'
+                        )
+
+            return False, ''
+
+        except Exception:
+            return False, ''
+
     # LAYER 2: HTTP Reachability Check
     def _cek_reachability(self, url):
         try:
@@ -294,6 +347,19 @@ class NetraPredictor:
                 detail     = 'Pola phishing kritis terdeteksi (IP/simbol @)',
                 is_anomali = True,
                 if_score   = 88,
+                reach_info = None,
+            )
+
+        # Layer 1E: Brand + TLD Mismatch
+        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
+        if is_mismatch:
+            return self._format(
+                kategori   = 'phishing',
+                confidence = 95.0,
+                method     = 'rule_based_brand_tld',
+                detail     = mismatch_detail,
+                is_anomali = True,
+                if_score   = 85,
                 reach_info = None,
             )
         
