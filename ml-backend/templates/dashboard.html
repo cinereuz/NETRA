@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NETRA — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* CSS VARIABLES */
+      :root {
+        --bg-base: #060910;
+        --bg-panel: #0d1117;
+        --bg-card: #111827;
+        --bg-hover: #1a2235;
+        --border: #1f2d40;
+        --border-bright: #2a3f5a;
+        --text-primary: #e2e8f0;
+        --text-secondary: #64748b;
+        --text-muted: #334155;
+        --blue: #3b82f6;
+        --blue-dark: #1d4ed8;
+        --blue-glow: rgba(59, 130, 246, 0.15);
+        --green: #22c55e;
+        --green-dark: #052e16;
+        --red: #ef4444;
+        --red-dark: #450a0a;
+        --orange: #f97316;
+        --orange-dark: #431407;
+        --yellow: #f59e0b;
+        --yellow-dark: #1c1917;
+        --gray: #475569;
+      }
+
+      /* RESET & BASE */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Grid background */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+        background-size: 40px 40px;
+        opacity: 0.3;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 220px;
+        background: var(--bg-panel);
+        border-right: 1px solid var(--border);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        padding: 24px 0;
+      }
+
+      .sidebar-logo {
+        padding: 0 20px 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+
+      .logo-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-icon-wrap {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 0 16px var(--blue-glow);
+      }
+
+      .logo-name {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 3px;
+        color: #fff;
+      }
+
+      .logo-ver {
+        font-size: 10px;
+        color: var(--text-secondary);
+        letter-spacing: 1px;
+        margin-top: 2px;
+      }
+
+      .nav-section {
+        padding: 0 12px;
+        flex: 1;
+      }
+
+      .nav-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        padding: 8px 8px 4px;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text-secondary);
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        text-decoration: none;
+      }
+
+      .nav-item:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+      .nav-item.active {
+        background: var(--blue-glow);
+        color: var(--blue);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+
+      .nav-item .nav-icon {
+        font-size: 15px;
+        width: 20px;
+        text-align: center;
+      }
+
+      .sidebar-footer {
+        padding: 16px 20px 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .server-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--gray);
+        transition: background 0.3s;
+        flex-shrink: 0;
+      }
+      .status-dot.online {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .status-dot.offline {
+        background: var(--red);
+        box-shadow: 0 0 6px var(--red);
+      }
+
+      /* MAIN CONTENT */
+      .main {
+        margin-left: 220px;
+        min-height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Topbar */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 28px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(13, 17, 23, 0.8);
+        backdrop-filter: blur(10px);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+
+      .topbar-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .topbar-sub {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 1px;
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn-refresh {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-bright);
+        border-radius: 6px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'Space Grotesk', sans-serif;
+      }
+
+      .btn-refresh:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+
+      .last-update {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* Content Area */
+      .content {
+        padding: 24px 28px;
+      }
+
+      /* STATS GRID */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+
+      .stat-card:hover {
+        border-color: var(--border-bright);
+      }
+
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 10px 0 0 10px;
+      }
+
+      .stat-card.blue::before {
+        background: var(--blue);
+      }
+      .stat-card.green::before {
+        background: var(--green);
+      }
+      .stat-card.red::before {
+        background: var(--red);
+      }
+      .stat-card.orange::before {
+        background: var(--orange);
+      }
+      .stat-card.yellow::before {
+        background: var(--yellow);
+      }
+
+      .stat-icon {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      .stat-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+
+      .stat-card.blue .stat-number {
+        color: var(--blue);
+      }
+      .stat-card.green .stat-number {
+        color: var(--green);
+      }
+      .stat-card.red .stat-number {
+        color: var(--red);
+      }
+      .stat-card.orange .stat-number {
+        color: var(--orange);
+      }
+      .stat-card.yellow .stat-number {
+        color: var(--yellow);
+      }
+
+      .stat-label {
+        font-size: 11px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 500;
+      }
+
+      /* PANEL (container tabel & chart) */
+      .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .panel-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+      }
+
+      .panel-badge.yellow {
+        background: var(--yellow-dark);
+        color: var(--yellow);
+        border: 1px solid #713f12;
+      }
+      .panel-badge.blue {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--blue);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      /* Filter Tabs */
+      .filter-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-panel);
+      }
+
+      .tab {
+        padding: 6px 14px;
+        border-radius: 5px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'Space Grotesk', sans-serif;
+      }
+
+      .tab:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+      .tab.active {
+        background: var(--blue-glow);
+        color: var(--blue);
+        border-color: rgba(59, 130, 246, 0.4);
+      }
+
+      /* TABLE */
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead th {
+        padding: 10px 16px;
+        text-align: left;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border);
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+      }
+
+      tbody td {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        vertical-align: middle;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      tbody tr:hover td {
+        background: var(--bg-hover);
+      }
+
+      /* ID column */
+      .td-id {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      /* URL column */
+      .td-url {
+        max-width: 260px;
+      }
+
+      .url-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #60a5fa;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 240px;
+        display: block;
+        cursor: help;
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .badge.phishing {
+        background: var(--red-dark);
+        color: #f87171;
+        border: 1px solid #7f1d1d;
+      }
+      .badge.judi_online {
+        background: var(--orange-dark);
+        color: #fb923c;
+        border: 1px solid #7c2d12;
+      }
+      .badge.aman {
+        background: var(--green-dark);
+        color: #4ade80;
+        border: 1px solid #14532d;
+      }
+      .badge.pending {
+        background: var(--yellow-dark);
+        color: #fbbf24;
+        border: 1px solid #713f12;
+      }
+      .badge.verified {
+        background: var(--green-dark);
+        color: #4ade80;
+        border: 1px solid #14532d;
+      }
+      .badge.rejected {
+        background: #1e293b;
+        color: #64748b;
+        border: 1px solid #334155;
+      }
+
+      /* Timestamp */
+      .td-time {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
+      /* Action buttons */
+      .action-wrap {
+        display: flex;
+        gap: 6px;
+      }
+
+      .btn-action {
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: none;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'Space Grotesk', sans-serif;
+        white-space: nowrap;
+      }
+
+      .btn-action.verify {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--green);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+      .btn-action.verify:hover {
+        background: rgba(34, 197, 94, 0.25);
+      }
+
+      .btn-action.reject {
+        background: rgba(71, 85, 105, 0.2);
+        color: #94a3b8;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+      }
+      .btn-action.reject:hover {
+        background: rgba(71, 85, 105, 0.35);
+      }
+
+      .reviewed-text {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* Empty & loading state */
+      .state-row td {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      /* TOP URLS PANEL */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .url-rank-list {
+        padding: 4px 0;
+      }
+
+      .url-rank-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+      }
+
+      .url-rank-item:last-child {
+        border-bottom: none;
+      }
+      .url-rank-item:hover {
+        background: var(--bg-hover);
+      }
+
+      .rank-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .rank-url {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #60a5fa;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .rank-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--orange);
+        flex-shrink: 0;
+      }
+
+      /* Prediksi per kategori */
+      .kategori-list {
+        padding: 8px 18px;
+      }
+
+      .kategori-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kategori-item:last-child {
+        border-bottom: none;
+      }
+
+      .kategori-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .kategori-name {
+        font-size: 12px;
+        color: var(--text-secondary);
+        flex: 1;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .kategori-bar-wrap {
+        width: 100px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .kategori-bar {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s ease;
+      }
+
+      .kategori-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-primary);
+        width: 40px;
+        text-align: right;
+      }
+
+      /* TOAST NOTIFICATION */
+      #toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        display: none;
+        z-index: 9999;
+        animation: slideUp 0.25s ease;
+        font-family: 'JetBrains Mono', monospace;
+        backdrop-filter: blur(10px);
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(16px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      #toast.success {
+        background: rgba(5, 46, 22, 0.95);
+        color: #4ade80;
+        border: 1px solid #16a34a;
+      }
+      #toast.error {
+        background: rgba(69, 10, 10, 0.95);
+        color: #f87171;
+        border: 1px solid #dc2626;
+      }
+
+      /* SPINNER */
+      .spin {
+        display: inline-block;
+        animation: spinning 0.8s linear infinite;
+      }
+
+      @keyframes spinning {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* SCROLLBAR */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-base);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-bright);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-badge">
+          <div class="logo-icon-wrap">🛡️</div>
+          <div>
+            <div class="logo-name">NETRA</div>
+            <div class="logo-ver">ADMIN v1.0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Menu</div>
+        <a class="nav-item active" onclick="showSection('laporan')"> <span class="nav-icon">📋</span> Laporan User </a>
+        <a class="nav-item" onclick="showSection('statistik')"> <span class="nav-icon">📊</span> Statistik </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="server-status">
+          <div class="status-dot" id="serverDot"></div>
+          <span id="serverText">Mengecek...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div>
+          <div class="topbar-title" id="pageTitle">📋 Laporan User</div>
+          <div class="topbar-sub" id="pageSubtitle">Kelola laporan crowdsourcing dari pengguna ekstensi</div>
+        </div>
+        <div class="topbar-right">
+          <span class="last-update" id="lastUpdate">—</span>
+          <button class="btn-refresh" onclick="refreshAll()"><span id="refreshIcon">↻</span> Refresh</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- STATS CARDS -->
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon">🔍</div>
+            <div class="stat-number" id="statPrediksi">—</div>
+            <div class="stat-label">Total Prediksi</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-number" id="statPending">—</div>
+            <div class="stat-label">Pending Review</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number" id="statVerified">—</div>
+            <div class="stat-label">Terverifikasi</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-number" id="statPhishing">—</div>
+            <div class="stat-label">Laporan Phishing</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">🟠</div>
+            <div class="stat-number" id="statJudol">—</div>
+            <div class="stat-label">Laporan Judol</div>
+          </div>
+        </div>
+
+        <!-- SECTION: LAPORAN -->
+        <div id="sectionLaporan">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                📋 Laporan dari Pengguna
+                <span class="panel-badge yellow" id="badgePending">0 pending</span>
+              </div>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="filter-tabs">
+              <button class="tab active" onclick="filterLaporan('all', this)">Semua</button>
+              <button class="tab" onclick="filterLaporan('0', this)">⏳ Pending</button>
+              <button class="tab" onclick="filterLaporan('1', this)">✅ Verified</button>
+            </div>
+
+            <!-- Tabel -->
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>URL</th>
+                    <th>Kategori</th>
+                    <th>Status</th>
+                    <th>Waktu</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelLaporan">
+                  <tr class="state-row">
+                    <td colspan="6"><span class="spin">↻</span> Memuat laporan...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: STATISTIK -->
+        <div id="sectionStatistik" style="display: none">
+          <div class="two-col">
+            <!-- Prediksi per kategori -->
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">📊 Prediksi per Kategori</div>
+              </div>
+              <div class="kategori-list" id="listPrediksi">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+              </div>
+            </div>
+
+            <!-- Laporan per kategori -->
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">📢 Laporan per Kategori</div>
+              </div>
+              <div class="kategori-list" id="listLaporan">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top URL dilaporkan -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                🔥 URL Paling Sering Dilaporkan
+                <span class="panel-badge blue">Top 10</span>
+              </div>
+            </div>
+            <div class="url-rank-list" id="listTopUrl">
+              <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /content -->
+    </main>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <script>
+      //   STATE
+      let filterAktif = 'all';
+      let sectionAktif = 'laporan';
+      let statsCache = null;
+
+      //   HELPER
+      function tampilToast(pesan, tipe = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = pesan;
+        t.className = tipe;
+        t.style.display = 'block';
+        setTimeout(() => {
+          t.style.display = 'none';
+        }, 3000);
+      }
+
+      function formatWaktu(ts) {
+        if (!ts) return '—';
+        try {
+          return new Date(ts).toLocaleString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        } catch {
+          return ts;
+        }
+      }
+
+      function showSection(nama) {
+        document.getElementById('sectionLaporan').style.display = nama === 'laporan' ? 'block' : 'none';
+        document.getElementById('sectionStatistik').style.display = nama === 'statistik' ? 'block' : 'none';
+
+        // Update nav aktif
+        document.querySelectorAll('.nav-item').forEach((el) => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // Update topbar
+        const titles = {
+          laporan: { title: '📋 Laporan User', sub: 'Kelola laporan crowdsourcing dari pengguna ekstensi' },
+          statistik: { title: '📊 Statistik', sub: 'Ringkasan data prediksi dan laporan NETRA' },
+        };
+        document.getElementById('pageTitle').textContent = titles[nama].title;
+        document.getElementById('pageSubtitle').textContent = titles[nama].sub;
+
+        sectionAktif = nama;
+
+        // Load data sesuai section
+        if (nama === 'laporan') muatLaporan();
+        if (nama === 'statistik') muatStatistik();
+      }
+
+      //   SERVER STATUS
+      async function cekServer() {
+        const dot = document.getElementById('serverDot');
+        const text = document.getElementById('serverText');
+        try {
+          const res = await fetch('/');
+          if (res.ok) {
+            dot.className = 'status-dot online';
+            text.textContent = 'Server aktif';
+          } else {
+            throw new Error();
+          }
+        } catch {
+          dot.className = 'status-dot offline';
+          text.textContent = 'Server mati';
+        }
+      }
+
+      //   STATS CARDS
+      async function muatStatsCards() {
+        try {
+          const res = await fetch('/admin/api/stats/detail');
+          const data = await res.json();
+          statsCache = data;
+
+          // Hitung total prediksi
+          const totalPrediksi = Object.values(data.prediksi_per_kategori || {}).reduce((a, b) => a + b, 0);
+
+          // Hitung verified (total - pending)
+          const totalLaporan = Object.values(data.laporan_per_kategori || {}).reduce((a, b) => a + b, 0);
+          const verified = totalLaporan - (data.pending_review || 0);
+
+          document.getElementById('statPrediksi').textContent = totalPrediksi;
+          document.getElementById('statPending').textContent = data.pending_review || 0;
+          document.getElementById('statVerified').textContent = Math.max(verified, 0);
+          document.getElementById('statPhishing').textContent = data.laporan_per_kategori?.['phishing'] || 0;
+          document.getElementById('statJudol').textContent = data.laporan_per_kategori?.['judi_online'] || 0;
+
+          // Update badge pending di panel header
+          document.getElementById('badgePending').textContent = `${data.pending_review || 0} pending`;
+
+          // Update waktu
+          document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
+        } catch (e) {
+          console.error('Gagal muat stats:', e);
+        }
+      }
+
+      //   TABEL LAPORAN
+      async function muatLaporan() {
+        const tbody = document.getElementById('tabelLaporan');
+        tbody.innerHTML = `<tr class="state-row"><td colspan="6"><span class="spin">↻</span> Memuat...</td></tr>`;
+
+        try {
+          let url = `/admin/api/reports?limit=100`;
+          if (filterAktif !== 'all') url += `&status=${filterAktif}`;
+
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (!data.reports || data.reports.length === 0) {
+            tbody.innerHTML = `<tr class="state-row"><td colspan="6">📭 Tidak ada laporan</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = data.reports
+            .map((r) => {
+              const isPending = r.verified == 0;
+              const statusBadge = isPending ? `<span class="badge pending">⏳ Pending</span>` : `<span class="badge verified">✅ Verified</span>`;
+
+              const aksiHtml = isPending
+                ? `<div class="action-wrap">
+                 <button class="btn-action verify" onclick="reviewLaporan(${r.id}, 'verify')">✓ Verify</button>
+                 <button class="btn-action reject" onclick="reviewLaporan(${r.id}, 'reject')">✗ Tolak</button>
+               </div>`
+                : `<span class="reviewed-text">Sudah direview</span>`;
+
+              return `
+            <tr id="row-${r.id}">
+              <td class="td-id">#${r.id}</td>
+              <td class="td-url">
+                <span class="url-text" title="${r.url}">${r.url}</span>
+              </td>
+              <td><span class="badge ${r.kategori}">${r.kategori}</span></td>
+              <td>${statusBadge}</td>
+              <td class="td-time">${formatWaktu(r.timestamp)}</td>
+              <td>${aksiHtml}</td>
+            </tr>`;
+            })
+            .join('');
+        } catch (e) {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="6">❌ Gagal memuat data</td></tr>`;
+        }
+      }
+
+      function filterLaporan(status, btnEl) {
+        filterAktif = status;
+        document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+        btnEl.classList.add('active');
+        muatLaporan();
+      }
+
+      async function reviewLaporan(id, action) {
+        try {
+          const res = await fetch(`/admin/api/reports/${id}/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            tampilToast(action === 'verify' ? '✅ Laporan diverifikasi!' : '✗ Laporan ditolak', action === 'verify' ? 'success' : 'error');
+            muatLaporan();
+            muatStatsCards();
+          }
+        } catch {
+          tampilToast('❌ Gagal melakukan review', 'error');
+        }
+      }
+
+      //   STATISTIK
+      const WARNA_KATEGORI = {
+        aman: { warna: '#22c55e', ikon: '🟢' },
+        phishing: { warna: '#ef4444', ikon: '🔴' },
+        judi_online: { warna: '#f97316', ikon: '🟠' },
+        suspicious: { warna: '#f59e0b', ikon: '🟡' },
+        domain_tidak_ada: { warna: '#475569', ikon: '⚫' },
+        tidak_dapat_diakses: { warna: '#3b82f6', ikon: '🔵' },
+      };
+
+      function renderKategoriList(elId, dataObj) {
+        const el = document.getElementById(elId);
+        const total = Object.values(dataObj).reduce((a, b) => a + b, 0);
+
+        if (total === 0) {
+          el.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">Belum ada data</div>`;
+          return;
+        }
+
+        el.innerHTML = Object.entries(dataObj)
+          .map(([kat, jml]) => {
+            const cfg = WARNA_KATEGORI[kat] || { warna: '#64748b', ikon: '⚪' };
+            const persen = total > 0 ? Math.round((jml / total) * 100) : 0;
+            return `
+          <div class="kategori-item">
+            <div class="kategori-dot" style="background:${cfg.warna}"></div>
+            <div class="kategori-name">${cfg.ikon} ${kat}</div>
+            <div class="kategori-bar-wrap">
+              <div class="kategori-bar" style="width:${persen}%; background:${cfg.warna}"></div>
+            </div>
+            <div class="kategori-count">${jml}</div>
+          </div>`;
+          })
+          .join('');
+      }
+
+      async function muatStatistik() {
+        try {
+          const res = await fetch('/admin/api/stats/detail');
+          const data = await res.json();
+
+          // Prediksi per kategori
+          renderKategoriList('listPrediksi', data.prediksi_per_kategori || {});
+
+          // Laporan per kategori
+          renderKategoriList('listLaporan', data.laporan_per_kategori || {});
+
+          // Top URLs
+          const topEl = document.getElementById('listTopUrl');
+          if (!data.top_reported_urls || data.top_reported_urls.length === 0) {
+            topEl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">Belum ada URL yang sering dilaporkan</div>`;
+          } else {
+            topEl.innerHTML = data.top_reported_urls
+              .map(
+                (item, i) => `
+            <div class="url-rank-item">
+              <div class="rank-num">${i + 1}</div>
+              <div class="rank-url" title="${item.url}">${item.url}</div>
+              <div class="rank-count">${item.jumlah}×</div>
+            </div>`,
+              )
+              .join('');
+          }
+        } catch (e) {
+          console.error('Gagal muat statistik:', e);
+        }
+      }
+
+      //   REFRESH ALL
+      async function refreshAll() {
+        const icon = document.getElementById('refreshIcon');
+        icon.classList.add('spin');
+        icon.textContent = '↻';
+
+        await Promise.all([cekServer(), muatStatsCards(), sectionAktif === 'laporan' ? muatLaporan() : Promise.resolve(), sectionAktif === 'statistik' ? muatStatistik() : Promise.resolve()]);
+
+        icon.classList.remove('spin');
+      }
+
+      //   INIT
+      (async function init() {
+        await cekServer();
+        await muatStatsCards();
+        await muatLaporan();
+
+        // Auto refresh setiap 30 detik
+        setInterval(refreshAll, 30000);
+      })();
+    </script>
+  </body>
+</html>

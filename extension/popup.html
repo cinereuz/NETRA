@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NETRA</title>
+    <link rel="stylesheet" href="styles/popup.css" />
+  </head>
+  <body>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-left">
+        <span class="logo-icon">🛡️</span>
+        <div>
+          <div class="logo-text">NETRA</div>
+          <div class="logo-sub">Network Threat Recognition Analysis</div>
+        </div>
+      </div>
+      <!-- Lingkaran indikator: hijau = server nyala, merah = mati -->
+      <div class="status-dot" id="statusDot" title="Status koneksi server"></div>
+    </div>
+
+    <!-- URL BOX (menampilkan URL tab aktif) -->
+    <div class="url-box">
+      <div class="url-label">🌐 URL yang sedang dibuka:</div>
+      <div class="url-text" id="currentUrl">Memuat...</div>
+    </div>
+
+    <!-- TOMBOL CEK -->
+    <div class="btn-area">
+      <button class="btn-check" id="btnCheck">🔍 Analisis URL Ini</button>
+    </div>
+
+    <!-- LOADING (tampil saat menunggu API) -->
+    <div class="loading-box" id="loadingBox" style="display: none">
+      <div class="spinner"></div>
+      <span>Menganalisis URL dengan AI...</span>
+    </div>
+
+    <!-- RESULT BOX (hasil deteksi)-->
+    <div class="result-box" id="resultBox" style="display: none">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-label" id="resultLabel"></div>
+      <div class="result-confidence" id="resultConfidence"></div>
+      <div class="result-method" id="resultMethod"></div>
+      <div class="result-detail" id="resultDetail"></div>
+    </div>
+
+    <!-- TOMBOL LAPOR (Muncul setelah ada hasil deteksi) -->
+    <div class="btn-area" id="btnReportArea" style="display: none">
+      <button class="btn-toggle-report" id="btnToggleReport">📢 Laporkan URL Ini</button>
+    </div>
+
+    <!-- FORM LAPORAN CROWDSOURCING -->
+    <div class="report-section" id="reportSection" style="display: none">
+      <div class="report-title">📢 Laporkan URL Ini ke NETRA</div>
+      <div class="report-desc">Laporan kamu membantu meningkatkan akurasi deteksi untuk semua pengguna.</div>
+
+      <!-- Dropdown pilih kategori -->
+      <select id="reportCategory" class="select-input">
+        <option value="">— Pilih kategori yang benar —</option>
+        <option value="phishing">🔴 Phishing (penipuan)</option>
+        <option value="judi_online">🟠 Judi Online</option>
+        <option value="aman">🟢 Aman (deteksi salah)</option>
+      </select>
+
+      <!-- Tombol batal + kirim -->
+      <div class="report-actions">
+        <button class="btn-cancel" id="btnCancelReport">✕ Batal</button>
+        <button class="btn-submit-report" id="btnSubmitReport">📤 Kirim Laporan</button>
+      </div>
+    </div>
+
+    <!-- NOTIFIKASI sukses / error -->
+    <div class="notification" id="notification" style="display: none"></div>
+
+    <!-- FOOTER (statistik ringkas) -->
+    <div class="footer">
+      <span id="footerStats">Menghubungkan ke server...</span>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -21,6 +21,7 @@ with open(CONFIG_PATH, 'r') as f:
 WHITELIST = set(config_data['DOMAINS']['WHITELIST'])
 BLACKLIST = set(config_data['DOMAINS']['BLACKLIST'])
 MULTI_LEVEL_TLDS = set(config_data['DOMAINS']['MULTI_LEVEL_TLDS'])
+LEGITIMATE_TLDS  = set(config_data['DOMAINS']['LEGITIMATE_TLDS'])
 
 GAMBLING_REGEX = re.compile(config_data['REGEX_PATTERNS']['GAMBLING'], re.IGNORECASE)
 PHISHING_REGEX = re.compile(config_data['REGEX_PATTERNS']['PHISHING'], re.IGNORECASE)
@@ -32,7 +33,7 @@ IF_OVERRIDE_THRESHOLD = config_data['THRESHOLDS']['IF_OVERRIDE']
 
 # HTTP Check
 # Timeout (berapa lama tunggu server merespons)
-HTTP_TIMEOUT = 5
+HTTP_TIMEOUT = 8
  
 # Status code
 HTTP_BLOCKED_BUT_ALIVE = {401, 403, 405, 406, 429}
@@ -181,6 +182,19 @@ class NetraPredictor:
 
             return False, ''
 
+        except Exception:
+            return False, ''
+        
+    def _cek_pandi_tld(self, url):
+        PANDI_VERIFIED = {'ac.id', 'go.id', 'sch.id', 'mil.id'}
+
+        try:
+            domain_utama = self._ekstrak_domain_utama(url)
+            for tld in PANDI_VERIFIED:
+                if domain_utama.endswith('.' + tld):
+                    return True, tld
+            return False, ''
+        
         except Exception:
             return False, ''
 
@@ -360,6 +374,20 @@ class NetraPredictor:
                 detail     = mismatch_detail,
                 is_anomali = True,
                 if_score   = 85,
+                reach_info = None,
+            )
+        
+        # Layer 1F: TLD Resmi PANDI
+        is_pandi_safe, pandi_tld = self._cek_pandi_tld(url)
+        if is_pandi_safe:
+            return self._format(
+                kategori   = 'aman',
+                confidence = 97.0,
+                method     = 'rule_based_pandi_tld',
+                detail     = (f'Domain .{pandi_tld} diverifikasi PANDI — '
+                              f'tidak bisa didaftarkan sembarang pihak'),
+                is_anomali = False,
+                if_score   = 0,
                 reach_info = None,
             )
         
