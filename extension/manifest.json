@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NETRA",
   "version": "1.0.0",
-  "description": "Sistem deteksi URL phishing dan judi online berbasis Hybrid Machine Learning dan Crowdsourcing",
+  "description": "Sistem deteksi URL phishing dan judi online berbasis Hybrid Machine Learning dan Crowd Sourcing",
 
   "permissions": ["activeTab", "storage", "notifications", "tabs"],
 
@@ -21,6 +21,13 @@
   "background": {
     "service_worker": "background.js"
   },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"]
+    }
+  ],
 
   "icons": {
     "16": "icons/icon16.png",
