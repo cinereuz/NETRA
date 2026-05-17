@@ -778,6 +778,10 @@
         <div class="nav-label">Menu</div>
         <a class="nav-item active" onclick="showSection('laporan')"> <span class="nav-icon">📋</span> Laporan User </a>
         <a class="nav-item" onclick="showSection('statistik')"> <span class="nav-icon">📊</span> Statistik </a>
+        <a class="nav-item" onclick="showSection('kandidat')">
+          <span class="nav-icon">🎯</span> Kandidat
+          <span id="navBadgeKandidat" style="margin-left: auto; background: #713f12; color: #fbbf24; font-size: 10px; padding: 1px 6px; border-radius: 10px; display: none; font-family: 'JetBrains Mono', monospace">0</span>
+        </a>
       </div>
 
       <div class="sidebar-footer">
@@ -909,6 +913,70 @@
             </div>
           </div>
         </div>
+
+        <!-- SECTION: KANDIDAT BLACKLIST & TRUSTED -->
+        <div id="sectionKandidat" style="display: none">
+          <!-- Info threshold -->
+          <div
+            style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #fbbf24; display: flex; align-items: center; gap: 8px"
+          >
+            ⚡ URL muncul di sini jika dilaporkan & diverifikasi minimal
+            <strong id="infoThreshold">3</strong>× oleh admin. Phishing/Judol → kandidat Blacklist. Aman (false positive) → kandidat Trusted List.
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                🎯 Kandidat Blacklist & Trusted List
+                <span class="panel-badge yellow" id="badgeKandidat">0 kandidat</span>
+              </div>
+              <button class="btn-refresh" onclick="muatKandidat()">↻ Refresh</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>URL</th>
+                    <th>Kategori Laporan</th>
+                    <th>Jumlah Verified</th>
+                    <th>Rekomendasi</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelKandidat">
+                  <tr class="state-row">
+                    <td colspan="5"><span class="spin">↻</span> Memuat...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Trusted List aktif -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">✅ Trusted List Aktif</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Alasan</th>
+                    <th>Ditambahkan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelTrusted">
+                  <tr class="state-row">
+                    <td colspan="4"><span class="spin">↻</span> Memuat...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- /content -->
     </main>
@@ -951,6 +1019,7 @@
       function showSection(nama) {
         document.getElementById('sectionLaporan').style.display = nama === 'laporan' ? 'block' : 'none';
         document.getElementById('sectionStatistik').style.display = nama === 'statistik' ? 'block' : 'none';
+        document.getElementById('sectionKandidat').style.display = nama === 'kandidat' ? 'block' : 'none';
 
         // Update nav aktif
         document.querySelectorAll('.nav-item').forEach((el) => el.classList.remove('active'));
@@ -960,6 +1029,7 @@
         const titles = {
           laporan: { title: '📋 Laporan User', sub: 'Kelola laporan crowdsourcing dari pengguna ekstensi' },
           statistik: { title: '📊 Statistik', sub: 'Ringkasan data prediksi dan laporan NETRA' },
+          kandidat: { title: '🎯 Kandidat Blacklist & Trusted', sub: 'URL yang memenuhi threshold laporan verified' },
         };
         document.getElementById('pageTitle').textContent = titles[nama].title;
         document.getElementById('pageSubtitle').textContent = titles[nama].sub;
@@ -969,6 +1039,171 @@
         // Load data sesuai section
         if (nama === 'laporan') muatLaporan();
         if (nama === 'statistik') muatStatistik();
+        if (nama === 'kandidat') muatKandidat();
+      }
+      //   KANDIDAT BLACKLIST & TRUSTED
+      async function muatKandidat() {
+        const tbody = document.getElementById('tabelKandidat');
+        tbody.innerHTML = `<tr class="state-row"><td colspan="5"><span class="spin">↻</span> Memuat...</td></tr>`;
+
+        try {
+          const res = await fetch('/admin/api/kandidat');
+          const data = await res.json();
+
+          document.getElementById('infoThreshold').textContent = data.threshold;
+
+          const jml = data.total;
+          document.getElementById('badgeKandidat').textContent = `${jml} kandidat`;
+          const navBadge = document.getElementById('navBadgeKandidat');
+          if (jml > 0) {
+            navBadge.textContent = jml;
+            navBadge.style.display = 'inline';
+          } else {
+            navBadge.style.display = 'none';
+          }
+
+          if (jml === 0) {
+            tbody.innerHTML = `<tr class="state-row"><td colspan="5">
+              ✅ Tidak ada kandidat baru — semua URL sudah diproses
+            </td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = data.kandidat
+            .map((k) => {
+              const isBlacklist = k.aksi_rekomendasi === 'blacklist';
+              const rekoBadge = isBlacklist ? `<span class="badge phishing">🚫 Blacklist</span>` : `<span class="badge aman">✅ Trusted</span>`;
+
+              const tombolAksi = isBlacklist
+                ? `<button class="btn-action verify"
+                        onclick="tambahBlacklist('${k.url}')">
+                  🚫 Tambah ke Blacklist
+                </button>`
+                : `<button class="btn-action verify"
+                        onclick="tambahTrusted('${k.url}')">
+                  ✅ Tambah ke Trusted
+                </button>`;
+
+              return `
+              <tr>
+                <td class="td-url">
+                  <span class="url-text" title="${k.url}">${k.url}</span>
+                </td>
+                <td><span class="badge ${k.kategori}">${k.kategori}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace; color:var(--yellow)">
+                  ${k.jumlah_verified}× verified
+                </td>
+                <td>${rekoBadge}</td>
+                <td>${tombolAksi}</td>
+              </tr>`;
+            })
+            .join('');
+
+          muatTrusted();
+        } catch (e) {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="5">❌ Gagal memuat data</td></tr>`;
+        }
+      }
+
+      async function tambahBlacklist(url) {
+        if (!confirm(`Tambahkan ke BLACKLIST?\n\n${url}\n\nURL ini akan langsung terdeteksi berbahaya oleh semua pengguna.`)) return;
+
+        try {
+          const res = await fetch('/admin/api/blacklist/tambah', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            tampilToast(`🚫 ${data.domain} masuk blacklist!`, 'success');
+            muatKandidat();
+            muatStatsCards();
+          } else {
+            tampilToast('❌ ' + (data.error || data.message), 'error');
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
+      }
+
+      async function tambahTrusted(url) {
+        if (!confirm(`Tambahkan ke TRUSTED LIST?\n\n${url}\n\nDomain ini akan mendapat boost confidence saat terdeteksi aman.`)) return;
+
+        try {
+          const res = await fetch('/admin/api/trusted/tambah', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url,
+              alasan: 'Dilaporkan aman oleh pengguna — diverifikasi admin',
+            }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            tampilToast(`✅ ${data.domain} masuk trusted list!`, 'success');
+            muatKandidat();
+          } else {
+            tampilToast('❌ ' + (data.error || data.message), 'error');
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
+      }
+
+      async function muatTrusted() {
+        const tbody = document.getElementById('tabelTrusted');
+
+        try {
+          const res = await fetch('/admin/api/trusted');
+          const data = await res.json();
+
+          if (data.total === 0) {
+            tbody.innerHTML = `<tr class="state-row"><td colspan="4">Belum ada domain di trusted list</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = data.trusted
+            .map(
+              (t) => `
+            <tr>
+              <td style="font-family:'JetBrains Mono',monospace; color:#60a5fa">
+                ${t.domain}
+              </td>
+              <td style="font-size:11px; color:var(--text-secondary)">${t.alasan}</td>
+              <td class="td-time">${formatWaktu(t.ditambah_at)}</td>
+              <td>
+                <button class="btn-action reject"
+                        onclick="nonaktifTrusted(${t.id}, '${t.domain}')">
+                  ✕ Nonaktifkan
+                </button>
+              </td>
+            </tr>`,
+            )
+            .join('');
+        } catch {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="4">❌ Gagal memuat</td></tr>`;
+        }
+      }
+
+      async function nonaktifTrusted(id, domain) {
+        if (!confirm(`Nonaktifkan ${domain} dari trusted list?`)) return;
+
+        try {
+          const res = await fetch(`/admin/api/trusted/${id}/nonaktif`, {
+            method: 'POST',
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            tampilToast(`✅ ${domain} dinonaktifkan dari trusted list`, 'success');
+            muatTrusted();
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
       }
 
       //   SERVER STATUS

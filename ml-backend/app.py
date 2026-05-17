@@ -1,3 +1,4 @@
+import json
 from flask       import Flask, request, jsonify, render_template
 from flask_cors  import CORS
 import sqlite3
@@ -40,6 +41,21 @@ def init_db():
             confidence  REAL    NOT NULL,
             method      TEXT    NOT NULL,
             timestamp   TEXT    NOT NULL
+        )
+    ''')
+
+    # Tabel trusted URLs (false positive yang dilaporkan user)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS trusted_urls (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain      TEXT    NOT NULL UNIQUE,
+            -- UNIQUE: satu domain hanya bisa masuk sekali
+            alasan      TEXT    DEFAULT '',
+            -- Alasan kenapa domain ini dipercaya
+            ditambah_at TEXT    NOT NULL,
+            -- Waktu domain ditambahkan
+            aktif       INTEGER DEFAULT 1
+            -- 1=aktif, 0=dinonaktifkan admin (soft delete)
         )
     ''')
     
@@ -276,6 +292,189 @@ def admin_stats_detail():
         'pending_review'       : pending,
         'top_reported_urls'    : [{'url': row[0], 'jumlah': row[1]} for row in top_urls]
     })
+
+# CROWDSOURCING INTELLIGENCE (Kandidat Blacklist & Trusted)
+@app.route('/admin/api/kandidat')
+def admin_kandidat():
+    THRESHOLD = 3
+
+    conn             = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    rows = conn.execute('''
+        SELECT
+            url,
+            kategori,
+            COUNT(*) as jumlah_verified
+        FROM reports
+        WHERE verified = 1
+        GROUP BY url, kategori
+        HAVING COUNT(*) >= ?
+        ORDER BY jumlah_verified DESC
+    ''', (THRESHOLD,)).fetchall()
+    import json as _json
+
+    config_path = os.path.join(os.path.dirname(__file__), 'data', 'config.json')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        cfg = _json.load(f)
+
+    blacklist_ada = cfg['DOMAINS']['BLACKLIST']
+
+    whitelist_ada = cfg['DOMAINS']['WHITELIST']
+
+    trusted_ada = [r[0] for r in conn.execute(
+        'SELECT domain FROM trusted_urls WHERE aktif=1'
+    ).fetchall()]
+
+    conn.close()
+
+    kandidat = []
+    for r in rows:
+        url      = r['url']
+        kategori = r['kategori']
+
+        from urllib.parse import urlparse as _urlparse
+        domain_kandidat = _urlparse(url).netloc
+
+        sudah_diproses = domain_kandidat in blacklist_ada or \
+                        domain_kandidat in whitelist_ada or \
+                        domain_kandidat in trusted_ada
+        if sudah_diproses:
+            continue
+
+        kandidat.append({
+            'url'             : url,
+            'kategori'        : kategori,
+            'jumlah_verified' : r['jumlah_verified'],
+            'aksi_rekomendasi': 'blacklist' if kategori in ['phishing', 'judi_online']
+                                            else 'trusted'
+        })
+
+    return jsonify({
+        'total'    : len(kandidat),
+        'kandidat' : kandidat,
+        'threshold': THRESHOLD
+    })
+
+
+@app.route('/admin/api/blacklist/tambah', methods=['POST'])
+def admin_tambah_blacklist():
+    data = request.get_json()
+    url  = data.get('url', '').strip()
+
+    if not url:
+        return jsonify({'error': 'URL wajib diisi'}), 400
+
+    try:
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc
+
+        if not domain:
+            return jsonify({'error': 'Tidak bisa ekstrak domain dari URL'}), 400
+
+        config_path = os.path.join(os.path.dirname(__file__), 'data', 'config.json')
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+        if domain in config['DOMAINS']['BLACKLIST']:
+            return jsonify({
+                'message': f'{domain} sudah ada di blacklist',
+                'domain' : domain
+            }), 200
+
+        config['DOMAINS']['BLACKLIST'].append(domain)
+
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+
+        predictor.reload_config()
+
+        return jsonify({
+            'success': True,
+            'message': f'✅ {domain} berhasil ditambahkan ke blacklist',
+            'domain' : domain
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/api/trusted/tambah', methods=['POST'])
+def admin_tambah_trusted():
+    data   = request.get_json()
+    url    = data.get('url', '').strip()
+    alasan = data.get('alasan', 'Dilaporkan aman oleh pengguna')
+
+    if not url:
+        return jsonify({'error': 'URL wajib diisi'}), 400
+
+    try:
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc
+
+        if not domain:
+            return jsonify({'error': 'Tidak bisa ekstrak domain'}), 400
+
+        conn = sqlite3.connect(DB_PATH)
+
+        conn.execute('''
+            INSERT OR IGNORE INTO trusted_urls (domain, alasan, ditambah_at)
+            VALUES (?, ?, ?)
+        ''', (domain, alasan, datetime.datetime.now().isoformat()))
+
+        conn.execute('''
+            UPDATE trusted_urls SET aktif=1 WHERE domain=?
+        ''', (domain,))
+
+        conn.commit()
+        conn.close()
+
+        predictor.reload_config()
+
+        return jsonify({
+            'success': True,
+            'message': f'✅ {domain} ditambahkan ke trusted list',
+            'domain' : domain
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/api/trusted', methods=['GET'])
+def admin_get_trusted():
+    conn             = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    rows = conn.execute(
+        'SELECT * FROM trusted_urls WHERE aktif=1 ORDER BY id DESC'
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify({
+        'total'  : len(rows),
+        'trusted': [dict(r) for r in rows]
+    })
+
+
+@app.route('/admin/api/trusted/<int:trusted_id>/nonaktif', methods=['POST'])
+def admin_nonaktif_trusted(trusted_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            'UPDATE trusted_urls SET aktif=0 WHERE id=?',
+            (trusted_id,)
+        )
+        conn.commit()
+        conn.close()
+
+        predictor.reload_config()
+
+        return jsonify({'success': True, 'id': trusted_id})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # MENJALANKAN SERVER
 if __name__ == '__main__':

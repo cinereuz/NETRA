@@ -7,6 +7,7 @@ import urllib.error
 import socket
 from pathlib import Path
 import numpy as np
+import sqlite3
 from .feature_extractor import extract_features
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,6 +23,7 @@ WHITELIST = set(config_data['DOMAINS']['WHITELIST'])
 BLACKLIST = set(config_data['DOMAINS']['BLACKLIST'])
 MULTI_LEVEL_TLDS = set(config_data['DOMAINS']['MULTI_LEVEL_TLDS'])
 LEGITIMATE_TLDS  = set(config_data['DOMAINS']['LEGITIMATE_TLDS'])
+TRUSTED_DOMAINS = set()
 
 GAMBLING_REGEX = re.compile(config_data['REGEX_PATTERNS']['GAMBLING'], re.IGNORECASE)
 PHISHING_REGEX = re.compile(config_data['REGEX_PATTERNS']['PHISHING'], re.IGNORECASE)
@@ -73,6 +75,8 @@ class NetraPredictor:
         print("Loading NETRA models ...")
         self._load_supervised()
         self._load_unsupervised()
+        global TRUSTED_DOMAINS
+        TRUSTED_DOMAINS = self._load_trusted_domains()
 
     def _load_supervised(self):
         # Load model supervised (Hybrid RF+LR)
@@ -325,6 +329,20 @@ class NetraPredictor:
                 if_score   = 0,
                 reach_info = None,
             )
+        # Trusted Domain (false positive terverifikasi)
+        domain_cek = self._ekstrak_domain_utama(url)
+        if domain_cek in TRUSTED_DOMAINS:
+            hasil_ml = self._prediksi_ml(url)
+            if hasil_ml.get('kategori') == 'aman':
+                return self._format(
+                    kategori   = 'aman',
+                    confidence = 85.0,
+                    method     = 'trusted_domain_verified',
+                    detail     = 'Domain diverifikasi aman oleh komunitas pengguna',
+                    is_anomali = False,
+                    if_score   = 0,
+                    reach_info = None,
+                )
 
         # Layer 1B: Blacklist
         if self._cek_blacklist(url):
@@ -493,6 +511,42 @@ class NetraPredictor:
             'reachability' : reach_info['reachability'] if reach_info else 'skipped',
             'reach_detail' : reach_info['reach_detail'] if reach_info else '',
         }
+    def reload_config(self):
+        global BLACKLIST, WHITELIST, TRUSTED_DOMAINS
+
+        try:
+            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                config_baru = json.load(f)
+
+            BLACKLIST = set(config_baru['DOMAINS']['BLACKLIST'])
+            WHITELIST = set(config_baru['DOMAINS']['WHITELIST'])
+
+            TRUSTED_DOMAINS = self._load_trusted_domains()
+
+            print(f"✅ Config reloaded! Blacklist: {len(BLACKLIST)} | "
+                  f"Whitelist: {len(WHITELIST)} | "
+                  f"Trusted: {len(TRUSTED_DOMAINS)}")
+
+        except Exception as e:
+            print(f"❌ Gagal reload config: {e}")
+
+
+    def _load_trusted_domains(self):
+        try:
+            db_path = os.path.join(
+                os.path.dirname(__file__), '..', 'data', 'netra.db'
+            )
+
+            conn = sqlite3.connect(db_path)
+            rows = conn.execute(
+                'SELECT domain FROM trusted_urls WHERE aktif=1'
+            ).fetchall()
+            conn.close()
+
+            return set(r[0] for r in rows)
+
+        except Exception:
+            return set()
 
 
 predictor = NetraPredictor()
