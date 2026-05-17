@@ -78,6 +78,9 @@
   },
   "DOMAINS": {
     "WHITELIST": [
+      "localhost",
+      "localhost:5000",
+      "127.0.0.1",
       "google.com",
       "youtube.com",
       "facebook.com",
