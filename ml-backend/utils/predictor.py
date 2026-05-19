@@ -316,6 +316,20 @@ class NetraPredictor:
         url = url.strip()
         if not url.startswith(('http://', 'https://')):
             url = 'http://' + url
+        
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(url)
+
+        path_bersih = parsed.path if parsed.path != '/' else ''
+
+        url = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            path_bersih,
+            parsed.params,
+            parsed.query,
+            parsed.fragment
+        ))
 
         # Layer 1A: Whitelist
         domain_utama = self._ekstrak_domain_utama(url)
@@ -332,17 +346,15 @@ class NetraPredictor:
         # Trusted Domain (false positive terverifikasi)
         domain_cek = self._ekstrak_domain_utama(url)
         if domain_cek in TRUSTED_DOMAINS:
-            hasil_ml = self._prediksi_ml(url)
-            if hasil_ml.get('kategori') == 'aman':
-                return self._format(
-                    kategori   = 'aman',
-                    confidence = 85.0,
-                    method     = 'trusted_domain_verified',
-                    detail     = 'Domain diverifikasi aman oleh komunitas pengguna',
-                    is_anomali = False,
-                    if_score   = 0,
-                    reach_info = None,
-                )
+            return self._format(
+                kategori   = 'aman',
+                confidence = 85.0,
+                method     = 'trusted_domain_verified',
+                detail     = f'Domain {domain_cek} diverifikasi aman oleh komunitas pengguna',
+                is_anomali = False,
+                if_score   = 0,
+                reach_info = None,
+            )
 
         # Layer 1B: Blacklist
         if self._cek_blacklist(url):
@@ -470,6 +482,11 @@ class NetraPredictor:
                 if kategori != 'aman':
                     confidence_sv = max(confidence_sv - 15.0, 45.0)
                     if_detail     = f'IF: URL terlihat normal (score: {if_score:.0f}), confidence diturunkan'
+                    if confidence_sv < CONFIDENCE_THRESHOLD:
+                            kategori  = 'suspicious'
+                            if_detail = (f'IF: URL terlihat normal (score: {if_score:.0f}), '
+                                        f'confidence {confidence_sv:.1f}% < threshold '
+                                        f'→ turun ke suspicious')
                 else:
                     if_detail = f'IF: normal (score: {if_score:.0f})'
 

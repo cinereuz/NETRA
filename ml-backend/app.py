@@ -403,37 +403,37 @@ def admin_tambah_blacklist():
 def admin_tambah_trusted():
     data   = request.get_json()
     url    = data.get('url', '').strip()
-    alasan = data.get('alasan', 'Dilaporkan aman oleh pengguna')
 
     if not url:
         return jsonify({'error': 'URL wajib diisi'}), 400
 
     try:
         from urllib.parse import urlparse
-        domain = urlparse(url).netloc
+        domain = urlparse(url).netloc.replace('www.', '')
 
         if not domain:
             return jsonify({'error': 'Tidak bisa ekstrak domain'}), 400
 
-        conn = sqlite3.connect(DB_PATH)
+        config_path = os.path.join(os.path.dirname(__file__), 'data', 'config.json')
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
 
-        conn.execute('''
-            INSERT OR IGNORE INTO trusted_urls (domain, alasan, ditambah_at)
-            VALUES (?, ?, ?)
-        ''', (domain, alasan, datetime.datetime.now().isoformat()))
+        if domain in config['DOMAINS']['WHITELIST']:
+            return jsonify({
+                'message': f'{domain} sudah ada di whitelist',
+                'domain' : domain
+            }), 200
 
-        conn.execute('''
-            UPDATE trusted_urls SET aktif=1 WHERE domain=?
-        ''', (domain,))
+        config['DOMAINS']['WHITELIST'].append(domain)
 
-        conn.commit()
-        conn.close()
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
 
         predictor.reload_config()
 
         return jsonify({
             'success': True,
-            'message': f'✅ {domain} ditambahkan ke trusted list',
+            'message': f'✅ {domain} ditambahkan ke whitelist',
             'domain' : domain
         })
 
