@@ -8,6 +8,7 @@ import socket
 from pathlib import Path
 import numpy as np
 import sqlite3
+from difflib import SequenceMatcher
 from .feature_extractor import extract_features
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +25,8 @@ BLACKLIST = set(config_data['DOMAINS']['BLACKLIST'])
 MULTI_LEVEL_TLDS = set(config_data['DOMAINS']['MULTI_LEVEL_TLDS'])
 LEGITIMATE_TLDS  = set(config_data['DOMAINS']['LEGITIMATE_TLDS'])
 TRUSTED_DOMAINS = set()
+TRUSTED_BRANDS   = set(config_data['KEYWORDS']['TRUSTED_BRANDS'])
+TYPOSQUATTING_THRESHOLD = 0.85
 
 GAMBLING_REGEX = re.compile(config_data['REGEX_PATTERNS']['GAMBLING'], re.IGNORECASE)
 PHISHING_REGEX = re.compile(config_data['REGEX_PATTERNS']['PHISHING'], re.IGNORECASE)
@@ -201,7 +204,66 @@ class NetraPredictor:
         
         except Exception:
             return False, ''
+    
+    def _cek_typosquatting(self, url):
+        try:
+            domain_utama = self._ekstrak_domain_utama(url)
+            bagian      = domain_utama.split('.')
+            nama_domain = bagian[0]
 
+            if len(nama_domain) < 5:
+                return False, '', 0.0
+            
+            HOMOGRAPH_MAP = {
+                '0': 'o',
+                '1': 'l',
+                '3': 'e',
+                '4': 'a',
+                '5': 's',
+                '6': 'g',
+                '7': 't',
+                '8': 'b',
+                '@': 'a',
+                '$': 's',
+            }
+
+            nama_domain_normal = nama_domain
+            for angka, huruf in HOMOGRAPH_MAP.items():
+                nama_domain_normal = nama_domain_normal.replace(angka, huruf)
+
+            skor_tertinggi     = 0.0
+            brand_paling_mirip = ''
+
+            for brand in TRUSTED_BRANDS:
+                if len(brand) < 4:
+                    continue
+
+                skor = SequenceMatcher(
+                    None, 
+                    nama_domain_normal,
+                    brand
+                ).ratio()
+
+                if skor > skor_tertinggi:
+                    skor_tertinggi     = skor
+                    brand_paling_mirip = brand
+
+            if skor_tertinggi >= TYPOSQUATTING_THRESHOLD:
+
+                if nama_domain == brand_paling_mirip:
+                    return False, '', 0.0
+
+                if self._cek_whitelist(url):
+                    return False, '', 0.0
+
+                return True, brand_paling_mirip, skor_tertinggi
+
+            return False, '', 0.0
+
+        except Exception as e:
+            print(f"Warning _cek_typosquatting: {e}")
+            return False, '', 0.0
+        
     # LAYER 2: HTTP Reachability Check
     def _cek_reachability(self, url):
         try:
@@ -418,6 +480,21 @@ class NetraPredictor:
                               f'tidak bisa didaftarkan sembarang pihak'),
                 is_anomali = False,
                 if_score   = 0,
+                reach_info = None,
+            )
+        
+        # Layer 1G: Typosquatting Detection
+        is_typo, brand_asli, skor = self._cek_typosquatting(url)
+        if is_typo:
+            persen = round(skor * 100, 1)
+            return self._format(
+                kategori   = 'phishing',
+                confidence = 93.0,
+                method     = 'rule_based_typosquatting',
+                detail     = (f'Domain mirip "{brand_asli}" ({persen}% similarity) '
+                              f'— terindikasi typosquatting'),
+                is_anomali = True,
+                if_score   = 85,
                 reach_info = None,
             )
         
