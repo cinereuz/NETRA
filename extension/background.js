@@ -75,3 +75,14 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
     console.log('🔄 NETRA diupdate!');
   }
 });
+
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === 'NETRA_TUTUP_TAB') {
+    if (sender.tab && sender.tab.id) {
+      setTimeout(() => {
+        chrome.tabs.remove(sender.tab.id);
+      }, 100);
+    }
+  }
+  return true;
+});

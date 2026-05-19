@@ -175,12 +175,24 @@ async function kirimLaporan() {
     const data = await response.json();
 
     if (response.ok) {
-      tampilNotif('✅ Laporan terkirim! Terima kasih 🛡️', 'success');
+      if (data.status === 'duplikat') {
+        tampilNotif('ℹ️ Kamu sudah pernah melaporkan URL ini', 'info');
+      } else {
+        tampilNotif('✅ Laporan terkirim! Terima kasih 🛡️', 'success');
+        setTimeout(async () => {
+          const [tab] = await chrome.tabs.query({
+            active: true, currentWindow: true
+          });
+          if (tab) chrome.tabs.remove(tab.id);
+        }, 2000);
+      }
+
       el.reportCategory.value        = '';
       hide(el.reportSection);
       state.reportVisible            = false;
       el.btnToggleReport.textContent = '📢 Laporkan URL Ini';
       muatStats();
+
     } else {
       tampilNotif('❌ ' + (data.error || 'Gagal kirim laporan'), 'error');
     }

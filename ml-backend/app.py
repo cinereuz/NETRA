@@ -25,10 +25,11 @@ def init_db():
         CREATE TABLE IF NOT EXISTS reports (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             url         TEXT    NOT NULL,
-            kategori    TEXT    NOT NULL,  -- 'phishing', 'judi_online', 'aman'
+            kategori    TEXT    NOT NULL,
             source      TEXT    DEFAULT 'user',
             timestamp   TEXT    NOT NULL,
-            verified    INTEGER DEFAULT 0  -- 0=belum, 1=sudah diverifikasi
+            verified    INTEGER DEFAULT 0,
+            ip_pelapor  TEXT    DEFAULT ''
         )
     ''')
     
@@ -60,6 +61,12 @@ def init_db():
     ''')
     
     conn.commit()
+    try:
+        conn.execute("ALTER TABLE reports ADD COLUMN ip_pelapor TEXT DEFAULT ''")
+        conn.commit()
+        print("✅ Kolom ip_pelapor ditambahkan!")
+    except:
+        pass
     conn.close()
     print("✅ Database siap!")
 
@@ -136,16 +143,35 @@ def report():
     url      = data['url'].strip()
     kategori = data['kategori'].strip()
     
-    # Validasi kategori
     if kategori not in ['phishing', 'judi_online', 'aman']:
         return jsonify({'error': 'Kategori harus: phishing / judi_online / aman'}), 400
-    
-    # Menyimpan laporan ke database
+
+    ip_pelapor = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_pelapor and ',' in ip_pelapor:
+        ip_pelapor = ip_pelapor.split(',')[0].strip()
+
     try:
         conn = sqlite3.connect(DB_PATH)
+        laporan_sama = conn.execute('''
+            SELECT id FROM reports
+            WHERE url = ? AND ip_pelapor = ?
+            LIMIT 1
+        ''', (url, ip_pelapor)).fetchone()
+
+        if laporan_sama:
+            conn.close()
+            return jsonify({
+                'status' : 'duplikat',
+                'pesan'  : 'Kamu sudah pernah melaporkan URL ini sebelumnya. Terima kasih atas kontribusimu!',
+                'url'    : url,
+            }), 200
+
         conn.execute(
-            'INSERT INTO reports (url, kategori, source, timestamp) VALUES (?, ?, ?, ?)',
-            (url, kategori, 'user', datetime.datetime.now().isoformat())
+            'INSERT INTO reports (url, kategori, source, timestamp, ip_pelapor) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (url, kategori, 'extension',
+             datetime.datetime.now().isoformat(),
+             ip_pelapor)
         )
         conn.commit()
         conn.close()

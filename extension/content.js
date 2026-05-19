@@ -366,9 +366,27 @@ function tampilkanFormLaporan(data) {
       const result = await res.json();
 
       if (res.ok) {
-        statusEl.style.color = '#4ade80';
-        statusEl.textContent = '✅ Laporan terkirim! Terima kasih.';
-        setTimeout(tutupOverlay, 2000);
+        if (result.status === 'duplikat') {
+          statusEl.style.color = '#60a5fa';
+          statusEl.textContent = 'ℹ️ Kamu sudah pernah melaporkan URL ini.';
+        } else {
+          statusEl.style.color = '#4ade80';
+          statusEl.textContent = '✅ Laporan terkirim! Terima kasih.';
+        }
+
+        btnKirim.disabled = true;
+        btnKirim.textContent = '✓ Selesai';
+        const kategoriDipilih = document.getElementById('netra-report-kategori').value;
+
+        setTimeout(() => {
+          if (kategoriDipilih === 'aman') {
+            tutupOverlay();
+          } else {
+            chrome.runtime.sendMessage({ type: 'NETRA_TUTUP_TAB' }).catch(() => {
+              window.location.href = 'https://google.com';
+            });
+          }
+        }, 2000);
       } else {
         statusEl.style.color = '#f87171';
         statusEl.textContent = '❌ ' + (result.error || 'Gagal kirim laporan');
