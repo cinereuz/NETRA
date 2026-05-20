@@ -256,12 +256,23 @@ def admin_get_reports():
             'SELECT * FROM reports ORDER BY id DESC LIMIT ?',
             (limit,)
         ).fetchall()
-    else:
-        verified = 1 if status == '1' else 0
+    elif status == '1':
         rows = conn.execute(
-            'SELECT * FROM reports WHERE verified=? ORDER BY id DESC LIMIT ?',
-            (verified, limit)
+            'SELECT * FROM reports WHERE verified=1 ORDER BY id DESC LIMIT ?',
+            (limit,)
         ).fetchall()
+    elif status == '0':
+        rows = conn.execute(
+            'SELECT * FROM reports WHERE verified=0 ORDER BY id DESC LIMIT ?',
+            (limit,)
+        ).fetchall()
+    elif status == '2':
+        rows = conn.execute(
+            'SELECT * FROM reports WHERE verified=2 ORDER BY id DESC LIMIT ?',
+            (limit,)
+        ).fetchall()
+    else:
+        rows = []
 
     conn.close()
     return jsonify({'total': len(rows), 'reports': [dict(row) for row in rows]})
@@ -275,7 +286,10 @@ def admin_verify_report(report_id):
     if action not in ['verify', 'reject']:
         return jsonify({'error': 'Action harus: verify atau reject'}), 400
 
-    verified = 1 if action == 'verify' else 0
+    if action == 'verify':
+        verified = 1
+    else:
+        verified = 2
 
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -334,6 +348,8 @@ def admin_kandidat():
             COUNT(*) as jumlah_verified
         FROM reports
         WHERE verified = 1
+        -- Hanya laporan yang benar-benar diverifikasi admin (verified=1)
+        -- verified=2 (Rejected) tidak masuk kandidat
         GROUP BY url, kategori
         HAVING COUNT(*) >= ?
         ORDER BY jumlah_verified DESC
