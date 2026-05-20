@@ -26,17 +26,42 @@ function updateBadge(tabId, kategori) {
   });
 }
 
+function storageKey(url) {
+  return `netra_aman::${url}`;
+}
+
+async function sudahDilaporkanAman(url) {
+  const key = storageKey(url);
+  const result = await chrome.storage.local.get({ [key]: false });
+  return result[key] === true;
+}
+
+async function simpanDilaporkanAman(url) {
+  const key = storageKey(url);
+  await chrome.storage.local.set({ [key]: true });
+}
+
+async function hapusDilaporkanAman(url) {
+  const key = storageKey(url);
+  await chrome.storage.local.remove(key);
+}
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return;
   if (!tab.url) return;
   if (!tab.url.startsWith('http://') && !tab.url.startsWith('https://')) return;
 
-  // skip URL lokal/development
+  // Skip URL lokal/development
   const urlObj = new URL(tab.url);
-  if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname.endsWith('.local')) {
+  if (
+    urlObj.hostname === 'localhost' ||
+    urlObj.hostname === '127.0.0.1' ||
+    urlObj.hostname.endsWith('.local')
+  ) {
     chrome.action.setBadgeText({ tabId, text: '' });
     return;
   }
+  const sudahAman = await sudahDilaporkanAman(tab.url);
 
   try {
     const res = await fetch(`${API_BASE}/api/check`, {
@@ -52,7 +77,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
     updateBadge(tabId, kategori);
 
-    if (KATEGORI_BAHAYA.includes(kategori)) {
+    if (KATEGORI_BAHAYA.includes(kategori) && !sudahAman) {
       chrome.tabs
         .sendMessage(tabId, {
           type: 'NETRA_BAHAYA',
@@ -84,5 +109,14 @@ chrome.runtime.onMessage.addListener((message, sender) => {
       }, 100);
     }
   }
+
+  if (message.type === 'NETRA_SIMPAN_AMAN') {
+    simpanDilaporkanAman(message.url).catch(() => {});
+  }
+
+  if (message.type === 'NETRA_HAPUS_AMAN') {
+    hapusDilaporkanAman(message.url).catch(() => {});
+  }
+
   return true;
 });
