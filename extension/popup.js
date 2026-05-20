@@ -4,8 +4,8 @@ const API_BASE = 'http://localhost:5000';
 // Tampilan per kategori: label teks dan nama class CSS
 const RESULT_CONFIG = {
   'aman':                { label: 'AMAN',                css: 'aman'                },
-  'phishing':            { label: 'BERBAHAYA',           css: 'phishing'            },
-  'judi_online':         { label: 'BERBAHAYA',           css: 'judi_online'         },
+  'phishing':            { label: 'PHISHING',           css: 'phishing'            },
+  'judi_online':         { label: 'JUDI ONLINE',           css: 'judi_online'         },
   'suspicious':          { label: 'MENCURIGAKAN',        css: 'suspicious'          },
   'domain_tidak_ada':    { label: 'DOMAIN TIDAK ADA',    css: 'domain_tidak_ada'    },
   'tidak_dapat_diakses': { label: 'TIDAK DAPAT DIAKSES', css: 'tidak_dapat_diakses' },
@@ -73,13 +73,14 @@ async function cekServer() {
 }
 
 
-//   FUNGSI CEK URL
+// FUNGSI CEK URL
 // Menampilkan hasil deteksi ke UI popup
 function tampilHasil(data) {
   const kategori = data.kategori || data.category || 'suspicious';
   const config   = RESULT_CONFIG[kategori] || RESULT_CONFIG['suspicious'];
 
   el.resultLabel.textContent = config.label;
+
   el.resultConfidence.textContent = (data.confidence != null)
     ? `Confidence: ${parseFloat(data.confidence).toFixed(1)}%`
     : '';
@@ -136,7 +137,7 @@ async function cekUrl(url) {
   }
 }
 
-//   CROWDSOURCING (Kirim Laporan)
+// CROWDSOURCING (Kirim Laporan)
 function toggleLaporan() {
   state.reportVisible = !state.reportVisible;
 
@@ -200,11 +201,11 @@ async function kirimLaporan() {
         }
       }
 
-      el.reportCategory.value        = '';  
-      hide(el.reportSection);
+      el.reportCategory.value        = ''; 
+      hide(el.reportSection);                
       state.reportVisible            = false;
       el.btnToggleReport.textContent = '📢 Laporkan URL Ini';
-      muatStats();
+      muatStats(); 
 
     } else {
       tampilNotif('❌ ' + (data.error || 'Gagal kirim laporan'), 'error');
@@ -230,6 +231,7 @@ async function muatStats() {
 }
 
 // EVENT LISTENERS
+
 el.btnCheck.addEventListener('click', () => {
   if (state.currentUrl) cekUrl(state.currentUrl);
 });

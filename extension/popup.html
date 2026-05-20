@@ -4,77 +4,89 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NETRA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/popup.css" />
   </head>
   <body>
+
     <!-- HEADER -->
     <div class="header">
       <div class="header-left">
-        <span class="logo-icon">🛡️</span>
-        <div>
-          <div class="logo-text">NETRA</div>
-          <div class="logo-sub">Network Threat Recognition Analysis</div>
-        </div>
+        <img src="icons/icon-logo.png" class="logo-img" alt="NETRA">
+        <span class="logo-text">NETRA</span>
       </div>
-      <!-- Lingkaran indikator: hijau = server nyala, merah = mati -->
+      <!-- Titik status server: hijau=online, merah=offline -->
       <div class="status-dot" id="statusDot" title="Status koneksi server"></div>
     </div>
 
-    <!-- URL BOX (menampilkan URL tab aktif) -->
+    <!-- URL BOX -->
     <div class="url-box">
-      <div class="url-label">🌐 URL yang sedang dibuka:</div>
-      <div class="url-text" id="currentUrl">Memuat...</div>
+      <span class="url-dot"></span>
+      <div class="url-content">
+        <div class="url-label">URL YANG SEDANG DIBUKA:</div>
+        <div class="url-text" id="currentUrl">Memuat...</div>
+      </div>
     </div>
 
-    <!-- TOMBOL CEK -->
+    <!-- TOMBOL ANALISIS -->
     <div class="btn-area">
-      <button class="btn-check" id="btnCheck">🔍 Analisis URL Ini</button>
+      <button class="btn-check" id="btnCheck">
+        <span class="btn-icon">🔍</span>
+        <span>Analisis URL ini</span>
+      </button>
     </div>
 
-    <!-- LOADING (tampil saat menunggu API) -->
+    <!-- LOADING -->
     <div class="loading-box" id="loadingBox" style="display: none">
       <div class="spinner"></div>
-      <span>Menganalisis URL dengan AI...</span>
+      <span>Menganalisis URL...</span>
     </div>
 
-    <!-- RESULT BOX (hasil deteksi)-->
+    <!-- RESULT BOX -->
     <div class="result-box" id="resultBox" style="display: none">
-      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-circle" id="resultCircle"></div>
       <div class="result-label" id="resultLabel"></div>
       <div class="result-confidence" id="resultConfidence"></div>
       <div class="result-method" id="resultMethod"></div>
       <div class="result-detail" id="resultDetail"></div>
     </div>
 
-    <!-- TOMBOL LAPOR (Muncul setelah ada hasil deteksi) -->
+    <!-- TOMBOL LAPOR / TUTUP FORM -->
     <div class="btn-area" id="btnReportArea" style="display: none">
-      <button class="btn-toggle-report" id="btnToggleReport">📢 Laporkan URL Ini</button>
+      <button class="btn-toggle-report" id="btnToggleReport">
+        Laporkan URL ini
+      </button>
     </div>
 
-    <!-- FORM LAPORAN CROWDSOURCING -->
+    <!-- FORM LAPORAN -->
     <div class="report-section" id="reportSection" style="display: none">
-      <div class="report-title">📢 Laporkan URL Ini ke NETRA</div>
-      <div class="report-desc">Laporan kamu membantu meningkatkan akurasi deteksi untuk semua pengguna.</div>
+      <div class="report-header">
+        <span class="report-icon">📢</span>
+        <div class="report-title">Laporkan URL ini ke NETRA</div>
+      </div>
+      <div class="report-desc">
+        Laporan kamu membantu meningkatkan akurasi deteksi untuk semua pengguna.
+      </div>
 
-      <!-- Dropdown pilih kategori -->
       <select id="reportCategory" class="select-input">
-        <option value="">— Pilih kategori yang benar —</option>
+        <option value="">- Pilih kategori yang benar -</option>
         <option value="phishing">🔴 Phishing (penipuan)</option>
         <option value="judi_online">🟠 Judi Online</option>
         <option value="aman">🟢 Aman (deteksi salah)</option>
       </select>
 
-      <!-- Tombol batal + kirim -->
       <div class="report-actions">
-        <button class="btn-cancel" id="btnCancelReport">✕ Batal</button>
-        <button class="btn-submit-report" id="btnSubmitReport">📤 Kirim Laporan</button>
+        <button class="btn-cancel" id="btnCancelReport">Batal</button>
+        <button class="btn-submit-report" id="btnSubmitReport">Kirim Laporan</button>
       </div>
     </div>
 
-    <!-- NOTIFIKASI sukses / error -->
+    <!-- NOTIFIKASI -->
     <div class="notification" id="notification" style="display: none"></div>
 
-    <!-- FOOTER (statistik ringkas) -->
+    <!-- FOOTER -->
     <div class="footer">
       <span id="footerStats">Menghubungkan ke server...</span>
     </div>

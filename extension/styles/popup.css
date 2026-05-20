@@ -1,4 +1,3 @@
-/* Reset & Base */
 * {
   margin: 0;
   padding: 0;
@@ -6,22 +5,22 @@
 }
 
 body {
-  width: 370px;
-  min-height: 100px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px;
-  background: #0f172a;
-  color: #e2e8f0;
+  width: 360px;
+  min-height: 80px;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: #ebebeb;
+  color: #1a1a1a;
+  overflow-x: hidden;
 }
 
-/* Header */
+/* HEADER */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-  border-bottom: 2px solid #2563eb;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-bottom: 1.5px solid #d0d0d0;
 }
 
 .header-left {
@@ -30,245 +29,304 @@ body {
   gap: 10px;
 }
 
-.logo-icon {
-  font-size: 24px;
+.logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
 }
 
 .logo-text {
-  font-size: 16px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 2px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 1.5px;
 }
 
-.logo-sub {
-  font-size: 9px;
-  color: #93c5fd;
-  letter-spacing: 0.5px;
-  margin-top: 1px;
-}
-
-/* Indikator status server */
+/* Titik indikator status server */
 .status-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: #64748b;
-  transition: background 0.3s;
+  background: #9ca3af;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
 }
 
-.status-dot.online {
-  background: #22c55e;
-}
-.status-dot.offline {
-  background: #ef4444;
-}
+.status-dot.online  { background: #22c55e; }
+.status-dot.offline { background: #ef4444; }
 
-/* URL Box */
+/* URL BOX */
 .url-box {
-  padding: 10px 14px;
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border-bottom: 1.5px solid #d0d0d0;
+}
+
+.url-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #60a5fa;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.url-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .url-label {
   font-size: 10px;
-  color: #64748b;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
 }
 
 .url-text {
   font-size: 11px;
-  color: #94a3b8;
+  color: #4a9eff;
   word-break: break-all;
   line-height: 1.4;
   max-height: 32px;
   overflow: hidden;
 }
 
-/* Area Tombol */
+/* TOMBOL ANALISIS */
 .btn-area {
-  padding: 10px 14px 0;
+  padding: 12px 16px 0;
 }
 
 .btn-check {
   width: 100%;
-  padding: 11px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
+  padding: 13px 16px;
+  background: #ffffff;
+  color: #1a1a1a;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 50px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.5px;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
 
 .btn-check:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+  background: #f0f0f0;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.13);
+}
+
+.btn-check:active {
+  transform: translateY(0);
 }
 
 .btn-check:disabled {
-  background: #334155;
+  background: #d0d0d0;
+  color: #888;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Loading Spinner */
+.btn-icon {
+  font-size: 16px;
+}
+
+/* LOADING */
 .loading-box {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 16px 14px;
-  color: #94a3b8;
+  padding: 20px 16px;
+  color: #555;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #1e293b;
-  border-top-color: #3b82f6;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #d0d0d0;
+  border-top-color: #333;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* Result Box */
+/* RESULT BOX */
 .result-box {
-  margin: 10px 14px;
-  padding: 14px;
-  border-radius: 10px;
+  margin: 12px 16px 0;
+  padding: 20px 16px 18px;
+  border-radius: 14px;
   text-align: center;
-  border: 2px solid transparent;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  animation: cardIn 0.25s ease;
 }
 
-/* Warna per kategori hasil */
-.result-box.aman {
-  background: #052e16;
-  border-color: #16a34a;
-}
-.result-box.phishing {
-  background: #450a0a;
-  border-color: #dc2626;
-}
-.result-box.judi_online {
-  background: #431407;
-  border-color: #ea580c;
-}
-.result-box.suspicious {
-  background: #1c1917;
-  border-color: #ca8a04;
-}
-.result-box.domain_tidak_ada {
-  background: #0f172a;
-  border-color: #475569;
-}
-.result-box.tidak_dapat_diakses {
-  background: #0f172a;
-  border-color: #3b82f6;
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.result-icon {
-  font-size: 36px;
-  margin-bottom: 6px;
+/* Warna card per kategori */
+.result-box.aman            { background: #7bc67e; }
+.result-box.phishing        { background: #e05555; }
+.result-box.judi_online     { background: #f0923a; }
+.result-box.suspicious      { background: #f0e040; }
+.result-box.domain_tidak_ada { background: #a0a0a0; }
+.result-box.tidak_dapat_diakses { background: #8ea8d8; }
+
+.result-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  border: 2.5px solid rgba(0,0,0,0.18);
 }
+
+/* Warna lingkaran per kategori */
+.result-box.aman            .result-circle { background: #4caf55; }
+.result-box.phishing        .result-circle { background: #c02020; }
+.result-box.judi_online     .result-circle { background: #e0701a; }
+.result-box.suspicious      .result-circle { background: #e8d800; }
+.result-box.domain_tidak_ada .result-circle { background: #777; }
+.result-box.tidak_dapat_diakses .result-circle { background: #5577bb; }
+
+/* Label besar: AMAN / PHISHING / dll */
 .result-label {
-  font-size: 17px;
-  font-weight: 800;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
   margin-bottom: 4px;
-  letter-spacing: 1px;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
+
+.result-box.suspicious .result-label {
+  color: #1a1a1a;
+}
+.result-box.suspicious .result-confidence,
+.result-box.suspicious .result-method,
+.result-box.suspicious .result-detail {
+  color: #333;
+}
+
 .result-confidence {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-bottom: 3px;
-}
-.result-method {
-  font-size: 10px;
-  color: #64748b;
-  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 2px;
   font-style: italic;
 }
-.result-detail {
+
+.result-method {
   font-size: 11px;
-  color: #64748b;
-  line-height: 1.4;
+  color: rgba(255,255,255,0.80);
+  margin-bottom: 4px;
 }
 
-/* Tombol Toggle Laporan */
+.result-detail {
+  font-size: 11px;
+  color: rgba(255,255,255,0.80);
+  line-height: 1.5;
+}
+
+/* TOMBOL LAPORAN */
 .btn-toggle-report {
   width: 100%;
-  padding: 8px;
-  background: transparent;
-  color: #94a3b8;
-  border: 1px dashed #475569;
-  border-radius: 6px;
+  padding: 13px 16px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 50px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s;
-  margin-top: 10px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  margin-top: 0;
 }
 
 .btn-toggle-report:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-  border-color: #64748b;
+  background: #f0f0f0;
+  transform: translateY(-1px);
 }
 
-/* Form Laporan */
+/* FORM LAPORAN */
 .report-section {
-  margin: 10px 14px;
-  padding: 12px;
-  background: #1e293b;
-  border-radius: 8px;
-  border: 1px solid #334155;
+  margin: 12px 16px 0;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  animation: cardIn 0.2s ease;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.report-icon {
+  font-size: 15px;
 }
 
 .report-title {
-  font-weight: 700;
   font-size: 13px;
-  color: #f1f5f9;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
 .report-desc {
   font-size: 11px;
-  color: #64748b;
-  margin-bottom: 10px;
-  line-height: 1.4;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
+/* Dropdown kategori */
 .select-input {
   width: 100%;
-  padding: 8px 10px;
-  background: #0f172a;
-  color: #e2e8f0;
-  border: 1px solid #475569;
-  border-radius: 6px;
+  padding: 10px 14px;
+  background: #e8e8e8;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
+  font-weight: 500;
   margin-bottom: 10px;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
 
 .select-input:focus {
-  outline: none;
-  border-color: #3b82f6;
+  outline: 2px solid #1a1a1a;
+  outline-offset: 1px;
 }
 
 /* Tombol batal + kirim */
@@ -279,87 +337,86 @@ body {
 
 .btn-cancel {
   flex: 1;
-  padding: 8px;
-  background: transparent;
-  color: #94a3b8;
-  border: 1px solid #475569;
-  border-radius: 6px;
+  padding: 10px;
+  background: #e8e8e8;
+  color: #444;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
+  transition: background 0.15s;
 }
 
 .btn-cancel:hover {
-  background: #334155;
-  color: #e2e8f0;
+  background: #d8d8d8;
 }
 
 .btn-submit-report {
   flex: 2;
-  padding: 8px;
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: white;
+  padding: 10px;
+  background: #e8e8e8;
+  color: #1a1a1a;
   border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
   font-weight: 700;
-  transition: all 0.2s;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
 .btn-submit-report:hover {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6);
+  background: #d0d0d0;
 }
+
 .btn-submit-report:disabled {
-  background: #334155;
+  background: #c8c8c8;
+  color: #888;
   cursor: not-allowed;
 }
 
-/* Notifikasi */
+/* NOTIFIKASI*/
 .notification {
-  margin: 8px 14px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  margin: 10px 16px 0;
+  padding: 9px 13px;
+  border-radius: 8px;
   font-size: 12px;
-  text-align: center;
   font-weight: 600;
-  animation: fadeIn 0.3s ease;
+  text-align: center;
+  animation: fadeIn 0.25s ease;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .notification.success {
-  background: #052e16;
-  color: #4ade80;
-  border: 1px solid #16a34a;
-}
-.notification.error {
-  background: #450a0a;
-  color: #f87171;
-  border: 1px solid #dc2626;
-}
-.notification.info {
-  background: #0c1a3a;
-  color: #60a5fa;
-  border: 1px solid #2563eb;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
 }
 
-/* Footer */
+.notification.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.notification.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+/* FOOTER */
 .footer {
-  padding: 8px 14px;
-  background: #1e293b;
-  border-top: 1px solid #334155;
+  padding: 10px 16px 12px;
   text-align: center;
-  font-size: 10px;
-  color: #475569;
-  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #555;
+  margin-top: 12px;
 }

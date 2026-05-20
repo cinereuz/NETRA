@@ -61,6 +61,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     chrome.action.setBadgeText({ tabId, text: '' });
     return;
   }
+
   const sudahAman = await sudahDilaporkanAman(tab.url);
 
   try {

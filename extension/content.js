@@ -1,4 +1,3 @@
-
 const API_BASE = 'http://localhost:5000';
 const OVERLAY_ID = 'netra-warning-overlay';
 
@@ -26,7 +25,7 @@ const CONFIG_BAHAYA = {
   },
 };
 
-// FUNGSI UTAMA (menampilkan overlay peringatan)
+// FUNGSI UTAMA (Menampilkan overlay peringatan)
 function tampilkanOverlay(data) {
   if (document.getElementById(OVERLAY_ID)) return;
 
@@ -37,6 +36,8 @@ function tampilkanOverlay(data) {
 
   const overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
+
+  // Style overlay
   overlay.style.cssText = `
     position: fixed !important;
     top: 0 !important; left: 0 !important;
@@ -135,7 +136,7 @@ function tampilkanOverlay(data) {
         margin-bottom: 14px;
         letter-spacing: 0.8px;
       ">
-        <span style="font-size:13px; font-weight:900; font-family: Georgia, serif;">NE</span>
+        <img src="${chrome.runtime.getURL('icons/icon-logo.png')}" style="height:18px; width:auto;">
         NETRA SECURITY ALERT
       </div>
 
@@ -341,7 +342,7 @@ function tampilkanFormLaporan(data) {
       margin-bottom: 16px;
       line-height: 1.6;
     ">
-      Pilih kategori yang paling tepat untuk URL ini. Laporkan
+      Pilih kategori yang paling tepat untuk URL ini. Laporan
       kamu membantu melindungi pengguna lain.
     </div>
 
@@ -391,7 +392,7 @@ function tampilkanFormLaporan(data) {
     "></div>
   `;
 
-  // Tombol Kembali 
+  // Tombol Kembali
   document.getElementById('netra-btn-back').addEventListener('click', () => {
     tutupOverlay();
     tampilkanOverlay(data);
@@ -465,6 +466,7 @@ function tampilkanFormLaporan(data) {
   });
 }
 
+// ── Tutup overlay dengan animasi fade out ────────────────────
 function tutupOverlay() {
   const overlay = document.getElementById(OVERLAY_ID);
   if (overlay) {
