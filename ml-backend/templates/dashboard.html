@@ -4,34 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NETRA — Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
-      /* CSS VARIABLES */
+      /* ── VARIABEL WARNA sesuai desain tim ── */
       :root {
-        --bg-base: #060910;
-        --bg-panel: #0d1117;
-        --bg-card: #111827;
-        --bg-hover: #1a2235;
-        --border: #1f2d40;
-        --border-bright: #2a3f5a;
-        --text-primary: #e2e8f0;
-        --text-secondary: #64748b;
-        --text-muted: #334155;
-        --blue: #3b82f6;
-        --blue-dark: #1d4ed8;
-        --blue-glow: rgba(59, 130, 246, 0.15);
-        --green: #22c55e;
-        --green-dark: #052e16;
-        --red: #ef4444;
-        --red-dark: #450a0a;
-        --orange: #f97316;
-        --orange-dark: #431407;
-        --yellow: #f59e0b;
-        --yellow-dark: #1c1917;
-        --gray: #475569;
+        --bg-sidebar: #1a2332; /* sidebar gelap navy */
+        --bg-main: #b8c8d8; /* area konten biru-abu muda */
+        --bg-topbar: #1a2332; /* topbar sama dengan sidebar */
+        --bg-card: #243040; /* card/panel dark navy */
+        --bg-hover: #2e3f52;
+        --border: #2e3f52;
+        --text-light: #ffffff;
+        --text-muted: #8fa8c0;
+        --text-dark: #1a2332;
+        /* Warna aksen stat cards */
+        --cyan: #00d4aa;
+        --yellow: #f5a623;
+        --green: #4caf50;
+        --red: #e53535;
+        --orange: #f0923a;
       }
 
-      /* RESET & BASE */
       *,
       *::before,
       *::after {
@@ -41,44 +34,34 @@
       }
 
       body {
-        font-family: 'Space Grotesk', sans-serif;
-        background: var(--bg-base);
-        color: var(--text-primary);
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg-main);
+        color: var(--text-light);
         min-height: 100vh;
-        overflow-x: hidden;
+        display: flex;
       }
 
-      /* Grid background */
-      body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-        background-size: 40px 40px;
-        opacity: 0.3;
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      /* SIDEBAR */
+      /* ══════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════ */
       .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
         width: 220px;
-        background: var(--bg-panel);
-        border-right: 1px solid var(--border);
-        z-index: 100;
+        min-height: 100vh;
+        background: var(--bg-sidebar);
         display: flex;
         flex-direction: column;
-        padding: 24px 0;
+        flex-shrink: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 100;
       }
 
+      /* Logo NE di sidebar */
       .sidebar-logo {
-        padding: 0 20px 24px;
+        padding: 20px 20px 18px;
         border-bottom: 1px solid var(--border);
-        margin-bottom: 16px;
       }
 
       .logo-badge {
@@ -87,79 +70,77 @@
         gap: 10px;
       }
 
-      .logo-icon-wrap {
-        width: 36px;
+      .logo-img {
         height: 36px;
-        background: linear-gradient(135deg, var(--blue-dark), var(--blue));
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        box-shadow: 0 0 16px var(--blue-glow);
+        width: auto;
+        filter: brightness(0) invert(1);
+        /* brightness(0) = jadikan hitam semua, invert(1) = balik jadi putih */
       }
 
       .logo-name {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 16px;
-        letter-spacing: 3px;
+        font-size: 15px;
+        font-weight: 800;
         color: #fff;
+        letter-spacing: 2px;
       }
 
-      .logo-ver {
-        font-size: 10px;
-        color: var(--text-secondary);
-        letter-spacing: 1px;
-        margin-top: 2px;
-      }
-
+      /* Nav items */
       .nav-section {
-        padding: 0 12px;
+        padding: 16px 12px;
         flex: 1;
-      }
-
-      .nav-label {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        color: var(--text-muted);
-        padding: 8px 8px 4px;
-        font-family: 'JetBrains Mono', monospace;
       }
 
       .nav-item {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 9px 10px;
-        border-radius: 6px;
+        padding: 11px 12px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 13px;
-        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-muted);
         transition: all 0.15s;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
         text-decoration: none;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
       }
 
       .nav-item:hover {
         background: var(--bg-hover);
-        color: var(--text-primary);
-      }
-      .nav-item.active {
-        background: var(--blue-glow);
-        color: var(--blue);
-        border: 1px solid rgba(59, 130, 246, 0.2);
+        color: #fff;
       }
 
-      .nav-item .nav-icon {
-        font-size: 15px;
-        width: 20px;
+      /* Active = background teal seperti desain */
+      .nav-item.active {
+        background: #1e5f6e;
+        color: var(--cyan);
+      }
+
+      .nav-icon {
+        font-size: 16px;
+        width: 22px;
         text-align: center;
       }
 
+      /* Badge kandidat di nav */
+      .nav-badge {
+        margin-left: auto;
+        background: #713f12;
+        color: #fbbf24;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        display: none;
+      }
+
+      /* Footer sidebar */
       .sidebar-footer {
-        padding: 16px 20px 0;
+        padding: 16px 20px;
         border-top: 1px solid var(--border);
       }
 
@@ -167,61 +148,62 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 11px;
-        color: var(--text-secondary);
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
       }
 
       .status-dot {
-        width: 7px;
-        height: 7px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
-        background: var(--gray);
+        background: #475569;
         transition: background 0.3s;
         flex-shrink: 0;
       }
       .status-dot.online {
-        background: var(--green);
-        box-shadow: 0 0 6px var(--green);
+        background: #22c55e;
+        box-shadow: 0 0 6px #22c55e;
       }
       .status-dot.offline {
-        background: var(--red);
-        box-shadow: 0 0 6px var(--red);
+        background: #ef4444;
+        box-shadow: 0 0 6px #ef4444;
       }
 
-      /* MAIN CONTENT */
+      /* ══════════════════════════════════════
+       MAIN AREA
+    ══════════════════════════════════════ */
       .main {
         margin-left: 220px;
+        flex: 1;
         min-height: 100vh;
-        position: relative;
-        z-index: 1;
+        display: flex;
+        flex-direction: column;
       }
 
       /* Topbar */
       .topbar {
+        background: var(--bg-topbar);
+        padding: 14px 28px;
+        border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 28px;
-        border-bottom: 1px solid var(--border);
-        background: rgba(13, 17, 23, 0.8);
-        backdrop-filter: blur(10px);
         position: sticky;
         top: 0;
         z-index: 50;
       }
 
       .topbar-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text-primary);
+        font-size: 18px;
+        font-weight: 800;
+        color: #fff;
       }
 
       .topbar-sub {
-        font-size: 12px;
-        color: var(--text-secondary);
-        font-family: 'JetBrains Mono', monospace;
-        margin-top: 1px;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
       }
 
       .topbar-right {
@@ -236,32 +218,36 @@
         gap: 6px;
         padding: 7px 14px;
         background: var(--bg-card);
-        border: 1px solid var(--border-bright);
+        border: 1px solid var(--border);
         border-radius: 6px;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         font-size: 12px;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.15s;
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: 'DM Sans', sans-serif;
       }
 
       .btn-refresh:hover {
         background: var(--bg-hover);
-        color: var(--text-primary);
+        color: #fff;
       }
 
       .last-update {
         font-size: 11px;
         color: var(--text-muted);
-        font-family: 'JetBrains Mono', monospace;
       }
 
-      /* Content Area */
+      /* Content */
       .content {
         padding: 24px 28px;
       }
 
-      /* STATS GRID */
+      /* ══════════════════════════════════════
+       STAT CARDS — sesuai desain tim
+       5 kartu berdampingan, masing-masing
+       punya left-border warna + angka besar
+    ══════════════════════════════════════ */
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -271,59 +257,56 @@
 
       .stat-card {
         background: var(--bg-card);
-        border: 1px solid var(--border);
         border-radius: 10px;
-        padding: 16px;
+        padding: 16px 14px;
         position: relative;
         overflow: hidden;
-        transition: border-color 0.2s;
+        border-left: 4px solid transparent;
+        /* border kiri warna sesuai desain */
       }
 
-      .stat-card:hover {
-        border-color: var(--border-bright);
+      .stat-card.cyan {
+        border-left-color: var(--cyan);
+      }
+      .stat-card.yellow {
+        border-left-color: var(--yellow);
+      }
+      .stat-card.green {
+        border-left-color: var(--green);
+      }
+      .stat-card.red {
+        border-left-color: var(--red);
+      }
+      .stat-card.orange {
+        border-left-color: var(--orange);
       }
 
-      .stat-card::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        border-radius: 10px 0 0 10px;
+      /* Baris ikon + angka besar berdampingan (sesuai desain) */
+      .stat-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
       }
 
-      .stat-card.blue::before {
-        background: var(--blue);
-      }
-      .stat-card.green::before {
-        background: var(--green);
-      }
-      .stat-card.red::before {
-        background: var(--red);
-      }
-      .stat-card.orange::before {
-        background: var(--orange);
-      }
-      .stat-card.yellow::before {
-        background: var(--yellow);
-      }
-
-      .stat-icon {
-        font-size: 20px;
-        margin-bottom: 8px;
-      }
-
-      .stat-number {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 28px;
-        font-weight: 700;
+      /* Ikon besar berwarna di stat card */
+      .stat-icon-big {
+        font-size: 22px;
         line-height: 1;
-        margin-bottom: 4px;
       }
 
-      .stat-card.blue .stat-number {
-        color: var(--blue);
+      /* Angka besar */
+      .stat-number {
+        font-size: 32px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .stat-card.cyan .stat-number {
+        color: var(--cyan);
+      }
+      .stat-card.yellow .stat-number {
+        color: var(--yellow);
       }
       .stat-card.green .stat-number {
         color: var(--green);
@@ -334,22 +317,19 @@
       .stat-card.orange .stat-number {
         color: var(--orange);
       }
-      .stat-card.yellow .stat-number {
-        color: var(--yellow);
-      }
 
       .stat-label {
         font-size: 11px;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 500;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: 0.3px;
       }
 
-      /* PANEL (container tabel & chart) */
+      /* ══════════════════════════════════════
+       PANEL (container tabel/chart)
+    ══════════════════════════════════════ */
       .panel {
         background: var(--bg-card);
-        border: 1px solid var(--border);
         border-radius: 10px;
         overflow: hidden;
         margin-bottom: 20px;
@@ -364,9 +344,9 @@
       }
 
       .panel-title {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
-        color: var(--text-primary);
+        color: #fff;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -374,56 +354,80 @@
 
       .panel-badge {
         font-size: 11px;
-        padding: 2px 8px;
+        padding: 2px 9px;
         border-radius: 20px;
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
+        font-weight: 700;
       }
 
       .panel-badge.yellow {
-        background: var(--yellow-dark);
+        background: #3d2800;
         color: var(--yellow);
         border: 1px solid #713f12;
       }
+
       .panel-badge.blue {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--blue);
+        background: rgba(59, 130, 246, 0.12);
+        color: #60a5fa;
         border: 1px solid rgba(59, 130, 246, 0.3);
       }
 
-      /* Filter Tabs */
+      /* Filter tabs */
       .filter-tabs {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         padding: 12px 18px;
         border-bottom: 1px solid var(--border);
-        background: var(--bg-panel);
+        background: #1e2d3e;
       }
 
       .tab {
-        padding: 6px 14px;
-        border-radius: 5px;
+        padding: 6px 16px;
+        border-radius: 6px;
         border: 1px solid var(--border);
         background: transparent;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.15s;
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: 'DM Sans', sans-serif;
       }
 
       .tab:hover {
         background: var(--bg-hover);
-        color: var(--text-primary);
-      }
-      .tab.active {
-        background: var(--blue-glow);
-        color: var(--blue);
-        border-color: rgba(59, 130, 246, 0.4);
+        color: #fff;
       }
 
-      /* TABLE */
+      .tab.active {
+        background: #1e4a28;
+        color: #4ade80;
+        border-color: #166534;
+      }
+
+      /* Tab pending */
+      .tab.tab-pending.active {
+        background: #3d2800;
+        color: var(--yellow);
+        border-color: #713f12;
+      }
+
+      /* Tab verified */
+      .tab.tab-verified.active {
+        background: #1e4a28;
+        color: #4ade80;
+        border-color: #166534;
+      }
+
+      /* Tab rejected */
+      .tab.tab-rejected.active {
+        background: #3d0a0a;
+        color: #f87171;
+        border-color: #7f1d1d;
+      }
+
+      /* ══════════════════════════════════════
+       TABLE
+    ══════════════════════════════════════ */
       .table-wrap {
         overflow-x: auto;
       }
@@ -439,18 +443,19 @@
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: var(--text-secondary);
-        background: var(--bg-panel);
+        color: var(--text-muted);
+        background: #1e2d3e;
         border-bottom: 1px solid var(--border);
-        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
         white-space: nowrap;
       }
 
       tbody td {
-        padding: 11px 16px;
+        padding: 12px 16px;
         border-bottom: 1px solid var(--border);
         font-size: 12px;
         vertical-align: middle;
+        color: #c8d8e8;
       }
 
       tbody tr:last-child td {
@@ -460,20 +465,18 @@
         background: var(--bg-hover);
       }
 
-      /* ID column */
       .td-id {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: monospace;
         font-size: 11px;
         color: var(--text-muted);
       }
 
-      /* URL column */
       .td-url {
         max-width: 260px;
       }
 
       .url-text {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: monospace;
         font-size: 11px;
         color: #60a5fa;
         white-space: nowrap;
@@ -482,43 +485,56 @@
         max-width: 240px;
         display: block;
         cursor: help;
+        text-decoration: underline;
+        text-underline-offset: 2px;
       }
 
-      /* Badge */
+      .td-time {
+        font-family: monospace;
+        font-size: 10px;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      /* ── BADGE ─────────────────────────── */
       .badge {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 3px 9px;
+        padding: 3px 10px;
         border-radius: 20px;
         font-size: 11px;
         font-weight: 700;
         white-space: nowrap;
-        font-family: 'JetBrains Mono', monospace;
       }
 
       .badge.phishing {
-        background: var(--red-dark);
+        background: #3d0a0a;
         color: #f87171;
         border: 1px solid #7f1d1d;
       }
       .badge.judi_online {
-        background: var(--orange-dark);
+        background: #3d1800;
         color: #fb923c;
         border: 1px solid #7c2d12;
       }
       .badge.aman {
-        background: var(--green-dark);
+        background: #0a2e18;
         color: #4ade80;
         border: 1px solid #14532d;
       }
+      .badge.suspicious {
+        background: #2d2200;
+        color: #fbbf24;
+        border: 1px solid #713f12;
+      }
       .badge.pending {
-        background: var(--yellow-dark);
+        background: #2d2200;
         color: #fbbf24;
         border: 1px solid #713f12;
       }
       .badge.verified {
-        background: var(--green-dark);
+        background: #0a2e18;
         color: #4ade80;
         border: 1px solid #14532d;
       }
@@ -528,128 +544,92 @@
         border: 1px solid #334155;
       }
 
-      /* Timestamp */
-      .td-time {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
-        color: var(--text-secondary);
-        white-space: nowrap;
-      }
-
-      /* Action buttons */
+      /* ── ACTION BUTTONS ─────────────────── */
       .action-wrap {
         display: flex;
         gap: 6px;
       }
 
       .btn-action {
-        padding: 5px 10px;
+        padding: 5px 12px;
         border-radius: 5px;
         border: none;
         font-size: 11px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.15s;
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: 'DM Sans', sans-serif;
         white-space: nowrap;
       }
 
       .btn-action.verify {
         background: rgba(34, 197, 94, 0.15);
-        color: var(--green);
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.35);
       }
       .btn-action.verify:hover {
-        background: rgba(34, 197, 94, 0.25);
+        background: rgba(34, 197, 94, 0.28);
       }
 
       .btn-action.reject {
         background: rgba(71, 85, 105, 0.2);
         color: #94a3b8;
-        border: 1px solid rgba(71, 85, 105, 0.3);
+        border: 1px solid rgba(71, 85, 105, 0.35);
       }
       .btn-action.reject:hover {
         background: rgba(71, 85, 105, 0.35);
       }
 
+      .btn-action.blacklist {
+        background: rgba(229, 53, 53, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(229, 53, 53, 0.35);
+      }
+      .btn-action.blacklist:hover {
+        background: rgba(229, 53, 53, 0.28);
+      }
+
+      .btn-action.whitelist {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+      }
+      .btn-action.whitelist:hover {
+        background: rgba(34, 197, 94, 0.28);
+      }
+
       .reviewed-text {
         font-size: 11px;
         color: var(--text-muted);
-        font-family: 'JetBrains Mono', monospace;
+        font-family: monospace;
       }
 
-      /* Empty & loading state */
+      /* Empty/loading state */
       .state-row td {
         text-align: center;
         padding: 40px;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         font-size: 13px;
       }
 
-      /* TOP URLS PANEL */
+      /* ══════════════════════════════════════
+       STATISTIK — 2 kolom + top urls
+    ══════════════════════════════════════ */
       .two-col {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
       }
 
-      .url-rank-list {
-        padding: 4px 0;
-      }
-
-      .url-rank-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 18px;
-        border-bottom: 1px solid var(--border);
-        transition: background 0.15s;
-      }
-
-      .url-rank-item:last-child {
-        border-bottom: none;
-      }
-      .url-rank-item:hover {
-        background: var(--bg-hover);
-      }
-
-      .rank-num {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        color: var(--text-muted);
-        width: 20px;
-        text-align: center;
-        flex-shrink: 0;
-      }
-
-      .rank-url {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        color: #60a5fa;
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .rank-count {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--orange);
-        flex-shrink: 0;
-      }
-
-      /* Prediksi per kategori */
       .kategori-list {
-        padding: 8px 18px;
+        padding: 8px 0;
       }
 
       .kategori-item {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 8px 0;
+        padding: 9px 18px;
         border-bottom: 1px solid var(--border);
       }
 
@@ -658,17 +638,17 @@
       }
 
       .kategori-dot {
-        width: 8px;
-        height: 8px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
         flex-shrink: 0;
       }
 
       .kategori-name {
         font-size: 12px;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         flex: 1;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: monospace;
       }
 
       .kategori-bar-wrap {
@@ -686,15 +666,77 @@
       }
 
       .kategori-count {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: monospace;
         font-size: 12px;
         font-weight: 700;
-        color: var(--text-primary);
-        width: 40px;
+        color: #fff;
+        width: 36px;
         text-align: right;
       }
 
-      /* TOAST NOTIFICATION */
+      /* URL rank list */
+      .url-rank-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 18px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+      }
+
+      .url-rank-item:last-child {
+        border-bottom: none;
+      }
+      .url-rank-item:hover {
+        background: var(--bg-hover);
+      }
+
+      .rank-num {
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .rank-url {
+        font-family: monospace;
+        font-size: 11px;
+        color: #60a5fa;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .rank-count {
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--orange);
+        flex-shrink: 0;
+      }
+
+      /* ══════════════════════════════════════
+       KANDIDAT — info banner
+    ══════════════════════════════════════ */
+      .info-banner {
+        background: rgba(245, 166, 35, 0.08);
+        border: 1px solid rgba(245, 166, 35, 0.22);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        color: #fbbf24;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ══════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════ */
       #toast {
         position: fixed;
         bottom: 24px;
@@ -702,12 +744,11 @@
         padding: 12px 18px;
         border-radius: 8px;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         display: none;
         z-index: 9999;
         animation: slideUp 0.25s ease;
-        font-family: 'JetBrains Mono', monospace;
-        backdrop-filter: blur(10px);
+        font-family: 'DM Sans', sans-serif;
       }
 
       @keyframes slideUp {
@@ -732,7 +773,7 @@
         border: 1px solid #dc2626;
       }
 
-      /* SPINNER */
+      /* Spinner */
       .spin {
         display: inline-block;
         animation: spinning 0.8s linear infinite;
@@ -744,44 +785,51 @@
         }
       }
 
-      /* SCROLLBAR */
+      /* Scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: var(--bg-base);
+        background: var(--bg-sidebar);
       }
       ::-webkit-scrollbar-thumb {
-        background: var(--border-bright);
+        background: var(--border);
         border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--gray);
+        background: #3e5068;
       }
     </style>
   </head>
   <body>
-    <!-- SIDEBAR -->
+    <!-- ══════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════ -->
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-badge">
-          <div class="logo-icon-wrap">🛡️</div>
+          <img src="/static/icons/icon-logo-putih.png" alt="NETRA" class="logo-img" />
           <div>
             <div class="logo-name">NETRA</div>
-            <div class="logo-ver">ADMIN v1.0</div>
           </div>
         </div>
       </div>
 
       <div class="nav-section">
-        <div class="nav-label">Menu</div>
-        <a class="nav-item active" onclick="showSection('laporan')"> <span class="nav-icon">📋</span> Laporan User </a>
-        <a class="nav-item" onclick="showSection('statistik')"> <span class="nav-icon">📊</span> Statistik </a>
-        <a class="nav-item" onclick="showSection('kandidat')">
-          <span class="nav-icon">🎯</span> Kandidat
-          <span id="navBadgeKandidat" style="margin-left: auto; background: #713f12; color: #fbbf24; font-size: 10px; padding: 1px 6px; border-radius: 10px; display: none; font-family: 'JetBrains Mono', monospace">0</span>
-        </a>
+        <button class="nav-item active" onclick="showSection('laporan', this)">
+          <span class="nav-icon">📋</span>
+          Laporan User
+        </button>
+        <button class="nav-item" onclick="showSection('statistik', this)">
+          <span class="nav-icon">📊</span>
+          Statistik
+        </button>
+        <button class="nav-item" onclick="showSection('kandidat', this)">
+          <span class="nav-icon">🎯</span>
+          Kandidat
+          <span class="nav-badge" id="navBadgeKandidat">0</span>
+        </button>
       </div>
 
       <div class="sidebar-footer">
@@ -792,7 +840,9 @@
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- ══════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════ -->
     <main class="main">
       <!-- Topbar -->
       <div class="topbar">
@@ -801,59 +851,71 @@
           <div class="topbar-sub" id="pageSubtitle">Kelola laporan crowdsourcing dari pengguna ekstensi</div>
         </div>
         <div class="topbar-right">
-          <span class="last-update" id="lastUpdate">—</span>
           <button class="btn-refresh" onclick="refreshAll()"><span id="refreshIcon">↻</span> Refresh</button>
         </div>
       </div>
 
       <div class="content">
-        <!-- STATS CARDS -->
+        <!-- STAT CARDS -->
         <div class="stats-grid">
-          <div class="stat-card blue">
-            <div class="stat-icon">🔍</div>
-            <div class="stat-number" id="statPrediksi">—</div>
+          <div class="stat-card cyan">
+            <div class="stat-top">
+              <span class="stat-icon-big">🔍</span>
+              <div class="stat-number" id="statPrediksi">—</div>
+            </div>
             <div class="stat-label">Total Prediksi</div>
           </div>
           <div class="stat-card yellow">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-number" id="statPending">—</div>
+            <div class="stat-top">
+              <span class="stat-icon-big">⏳</span>
+              <div class="stat-number" id="statPending">—</div>
+            </div>
             <div class="stat-label">Pending Review</div>
           </div>
           <div class="stat-card green">
-            <div class="stat-icon">✅</div>
-            <div class="stat-number" id="statVerified">—</div>
+            <div class="stat-top">
+              <span class="stat-icon-big">✅</span>
+              <div class="stat-number" id="statVerified">—</div>
+            </div>
             <div class="stat-label">Terverifikasi</div>
           </div>
           <div class="stat-card red">
-            <div class="stat-icon">🔴</div>
-            <div class="stat-number" id="statPhishing">—</div>
-            <div class="stat-label">Laporan Phishing</div>
+            <div class="stat-top">
+              <!-- Lingkaran merah solid sesuai desain -->
+              <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 2px"></span>
+              <div class="stat-number" id="statPhishing">—</div>
+            </div>
+            <div class="stat-label">Laporan Phising</div>
           </div>
           <div class="stat-card orange">
-            <div class="stat-icon">🟠</div>
-            <div class="stat-number" id="statJudol">—</div>
+            <div class="stat-top">
+              <!-- Lingkaran oranye solid sesuai desain -->
+              <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--orange); flex-shrink: 0; margin-top: 2px"></span>
+              <div class="stat-number" id="statJudol">—</div>
+            </div>
             <div class="stat-label">Laporan Judol</div>
           </div>
         </div>
 
-        <!-- SECTION: LAPORAN -->
+        <!-- ════════════════════════════════
+           SECTION: LAPORAN USER
+      ════════════════════════════════ -->
         <div id="sectionLaporan">
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
                 📋 Laporan dari Pengguna
-                <span class="panel-badge yellow" id="badgePending">0 pending</span>
+                <span class="panel-badge yellow" id="badgePending">0 Pending</span>
               </div>
             </div>
 
-            <!-- Filter tabs -->
             <div class="filter-tabs">
               <button class="tab active" onclick="filterLaporan('all', this)">Semua</button>
-              <button class="tab" onclick="filterLaporan('0', this)">⏳ Pending</button>
-              <button class="tab" onclick="filterLaporan('1', this)">✅ Verified</button>
+              <button class="tab tab-pending" onclick="filterLaporan('0', this)">⏳ Pending</button>
+              <button class="tab tab-verified" onclick="filterLaporan('1', this)">✅ Verifed</button>
+              <button class="tab tab-rejected" onclick="filterLaporan('2', this)">✗ Ditolak</button>
             </div>
 
-            <!-- Tabel -->
             <div class="table-wrap">
               <table>
                 <thead>
@@ -876,50 +938,47 @@
           </div>
         </div>
 
-        <!-- SECTION: STATISTIK -->
+        <!-- ════════════════════════════════
+           SECTION: STATISTIK
+      ════════════════════════════════ -->
         <div id="sectionStatistik" style="display: none">
           <div class="two-col">
-            <!-- Prediksi per kategori -->
             <div class="panel">
               <div class="panel-header">
                 <div class="panel-title">📊 Prediksi per Kategori</div>
               </div>
               <div class="kategori-list" id="listPrediksi">
-                <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px">Memuat...</div>
               </div>
             </div>
-
-            <!-- Laporan per kategori -->
             <div class="panel">
               <div class="panel-header">
                 <div class="panel-title">📢 Laporan per Kategori</div>
               </div>
               <div class="kategori-list" id="listLaporan">
-                <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px">Memuat...</div>
               </div>
             </div>
           </div>
 
-          <!-- Top URL dilaporkan -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                🔥 URL Paling Sering Dilaporkan
-                <span class="panel-badge blue">Top 10</span>
+                URL Paling Sering Dilaporkan
+                <span class="panel-badge blue">TOP 10</span>
               </div>
             </div>
-            <div class="url-rank-list" id="listTopUrl">
-              <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 12px">Memuat...</div>
+            <div id="listTopUrl">
+              <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px">Memuat...</div>
             </div>
           </div>
         </div>
 
-        <!-- SECTION: KANDIDAT BLACKLIST & TRUSTED -->
+        <!-- ════════════════════════════════
+           SECTION: KANDIDAT
+      ════════════════════════════════ -->
         <div id="sectionKandidat" style="display: none">
-          <!-- Info threshold -->
-          <div
-            style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #fbbf24; display: flex; align-items: center; gap: 8px"
-          >
+          <div class="info-banner" style="background-color: var(--bg-card)">
             ⚡ URL muncul di sini jika dilaporkan & diverifikasi minimal
             <strong id="infoThreshold">3</strong>× oleh admin. Phishing/Judol → kandidat Blacklist. Aman (false positive) → kandidat Trusted List.
           </div>
@@ -928,11 +987,10 @@
             <div class="panel-header">
               <div class="panel-title">
                 🎯 Kandidat Blacklist & Trusted List
-                <span class="panel-badge yellow" id="badgeKandidat">0 kandidat</span>
+                <span class="panel-badge yellow" id="badgeKandidat">0 Kandidat</span>
               </div>
               <button class="btn-refresh" onclick="muatKandidat()">↻ Refresh</button>
             </div>
-
             <div class="table-wrap">
               <table>
                 <thead>
@@ -953,7 +1011,6 @@
             </div>
           </div>
 
-          <!-- Trusted List aktif -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">✅ Trusted List Aktif</div>
@@ -980,17 +1037,20 @@
       </div>
       <!-- /content -->
     </main>
+    <!-- /main -->
 
-    <!-- Toast -->
     <div id="toast"></div>
 
+    <!-- ══════════════════════════════════════
+       JAVASCRIPT — logika sama persis dengan
+       dashboard lama, hanya showSection diupdate
+  ══════════════════════════════════════ -->
     <script>
-      //   STATE
       let filterAktif = 'all';
       let sectionAktif = 'laporan';
       let statsCache = null;
 
-      //   HELPER
+      // ── HELPER ──────────────────────────────────────────────
       function tampilToast(pesan, tipe = 'success') {
         const t = document.getElementById('toast');
         t.textContent = pesan;
@@ -1003,210 +1063,47 @@
 
       function formatWaktu(ts) {
         if (!ts) return '—';
-        try {
-          return new Date(ts).toLocaleString('id-ID', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-        } catch {
-          return ts;
-        }
+        const d = new Date(ts);
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       }
 
-      function showSection(nama) {
-        document.getElementById('sectionLaporan').style.display = nama === 'laporan' ? 'block' : 'none';
-        document.getElementById('sectionStatistik').style.display = nama === 'statistik' ? 'block' : 'none';
-        document.getElementById('sectionKandidat').style.display = nama === 'kandidat' ? 'block' : 'none';
+      // ── NAVIGASI SECTION ────────────────────────────────────
+      const SECTIONS = {
+        laporan: { el: 'sectionLaporan', title: '📋 Laporan User', sub: 'Kelola laporan crowdsourcing dari pengguna ekstensi' },
+        statistik: { el: 'sectionStatistik', title: '📊 Statistik', sub: 'Ringkasan data prediksi dan laporan NETRA' },
+        kandidat: { el: 'sectionKandidat', title: '🎯 Kandidat Blacklist & Trusted', sub: 'URL yang memenuhi threshold laporan verified' },
+      };
 
-        // Update nav aktif
-        document.querySelectorAll('.nav-item').forEach((el) => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-
-        // Update topbar
-        const titles = {
-          laporan: { title: '📋 Laporan User', sub: 'Kelola laporan crowdsourcing dari pengguna ekstensi' },
-          statistik: { title: '📊 Statistik', sub: 'Ringkasan data prediksi dan laporan NETRA' },
-          kandidat: { title: '🎯 Kandidat Blacklist & Trusted', sub: 'URL yang memenuhi threshold laporan verified' },
-        };
-        document.getElementById('pageTitle').textContent = titles[nama].title;
-        document.getElementById('pageSubtitle').textContent = titles[nama].sub;
-
+      function showSection(nama, btnEl) {
         sectionAktif = nama;
 
-        // Load data sesuai section
-        if (nama === 'laporan') muatLaporan();
+        // Sembunyikan semua section
+        Object.values(SECTIONS).forEach((s) => {
+          const el = document.getElementById(s.el);
+          if (el) el.style.display = 'none';
+        });
+
+        // Tampilkan section yang dipilih
+        const cfg = SECTIONS[nama];
+        if (cfg) {
+          document.getElementById(cfg.el).style.display = 'block';
+          document.getElementById('pageTitle').textContent = cfg.title;
+          document.getElementById('pageSubtitle').textContent = cfg.sub;
+        }
+
+        // Update active class di nav
+        document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active'));
+        if (btnEl) btnEl.classList.add('active');
+
+        // Muat data section
         if (nama === 'statistik') muatStatistik();
-        if (nama === 'kandidat') muatKandidat();
-      }
-      //   KANDIDAT BLACKLIST & TRUSTED
-      async function muatKandidat() {
-        const tbody = document.getElementById('tabelKandidat');
-        tbody.innerHTML = `<tr class="state-row"><td colspan="5"><span class="spin">↻</span> Memuat...</td></tr>`;
-
-        try {
-          const res = await fetch('/admin/api/kandidat');
-          const data = await res.json();
-
-          document.getElementById('infoThreshold').textContent = data.threshold;
-
-          const jml = data.total;
-          document.getElementById('badgeKandidat').textContent = `${jml} kandidat`;
-          const navBadge = document.getElementById('navBadgeKandidat');
-          if (jml > 0) {
-            navBadge.textContent = jml;
-            navBadge.style.display = 'inline';
-          } else {
-            navBadge.style.display = 'none';
-          }
-
-          if (jml === 0) {
-            tbody.innerHTML = `<tr class="state-row"><td colspan="5">
-              ✅ Tidak ada kandidat baru — semua URL sudah diproses
-            </td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = data.kandidat
-            .map((k) => {
-              const isBlacklist = k.aksi_rekomendasi === 'blacklist';
-              const rekoBadge = isBlacklist ? `<span class="badge phishing">🚫 Blacklist</span>` : `<span class="badge aman">✅ Trusted</span>`;
-
-              const tombolAksi = isBlacklist
-                ? `<button class="btn-action verify"
-                        onclick="tambahBlacklist('${k.url}')">
-                  🚫 Tambah ke Blacklist
-                </button>`
-                : `<button class="btn-action verify"
-                        onclick="tambahTrusted('${k.url}')">
-                  ✅ Tambah ke Trusted
-                </button>`;
-
-              return `
-              <tr>
-                <td class="td-url">
-                  <span class="url-text" title="${k.url}">${k.url}</span>
-                </td>
-                <td><span class="badge ${k.kategori}">${k.kategori}</span></td>
-                <td style="font-family:'JetBrains Mono',monospace; color:var(--yellow)">
-                  ${k.jumlah_verified}× verified
-                </td>
-                <td>${rekoBadge}</td>
-                <td>${tombolAksi}</td>
-              </tr>`;
-            })
-            .join('');
-
+        if (nama === 'kandidat') {
+          muatKandidat();
           muatTrusted();
-        } catch (e) {
-          tbody.innerHTML = `<tr class="state-row"><td colspan="5">❌ Gagal memuat data</td></tr>`;
         }
       }
 
-      async function tambahBlacklist(url) {
-        if (!confirm(`Tambahkan ke BLACKLIST?\n\n${url}\n\nURL ini akan langsung terdeteksi berbahaya oleh semua pengguna.`)) return;
-
-        try {
-          const res = await fetch('/admin/api/blacklist/tambah', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url }),
-          });
-          const data = await res.json();
-
-          if (data.success) {
-            tampilToast(`🚫 ${data.domain} masuk blacklist!`, 'success');
-            muatKandidat();
-            muatStatsCards();
-          } else {
-            tampilToast('❌ ' + (data.error || data.message), 'error');
-          }
-        } catch {
-          tampilToast('❌ Gagal menghubungi server', 'error');
-        }
-      }
-
-      async function tambahTrusted(url) {
-        if (!confirm(`Tambahkan ke TRUSTED LIST?\n\n${url}\n\nDomain ini akan mendapat boost confidence saat terdeteksi aman.`)) return;
-
-        try {
-          const res = await fetch('/admin/api/trusted/tambah', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              url,
-              alasan: 'Dilaporkan aman oleh pengguna — diverifikasi admin',
-            }),
-          });
-          const data = await res.json();
-
-          if (data.success) {
-            tampilToast(`✅ ${data.domain} masuk trusted list!`, 'success');
-            muatKandidat();
-          } else {
-            tampilToast('❌ ' + (data.error || data.message), 'error');
-          }
-        } catch {
-          tampilToast('❌ Gagal menghubungi server', 'error');
-        }
-      }
-
-      async function muatTrusted() {
-        const tbody = document.getElementById('tabelTrusted');
-
-        try {
-          const res = await fetch('/admin/api/trusted');
-          const data = await res.json();
-
-          if (data.total === 0) {
-            tbody.innerHTML = `<tr class="state-row"><td colspan="4">Belum ada domain di trusted list</td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = data.trusted
-            .map(
-              (t) => `
-            <tr>
-              <td style="font-family:'JetBrains Mono',monospace; color:#60a5fa">
-                ${t.domain}
-              </td>
-              <td style="font-size:11px; color:var(--text-secondary)">${t.alasan}</td>
-              <td class="td-time">${formatWaktu(t.ditambah_at)}</td>
-              <td>
-                <button class="btn-action reject"
-                        onclick="nonaktifTrusted(${t.id}, '${t.domain}')">
-                  ✕ Nonaktifkan
-                </button>
-              </td>
-            </tr>`,
-            )
-            .join('');
-        } catch {
-          tbody.innerHTML = `<tr class="state-row"><td colspan="4">❌ Gagal memuat</td></tr>`;
-        }
-      }
-
-      async function nonaktifTrusted(id, domain) {
-        if (!confirm(`Nonaktifkan ${domain} dari trusted list?`)) return;
-
-        try {
-          const res = await fetch(`/admin/api/trusted/${id}/nonaktif`, {
-            method: 'POST',
-          });
-          const data = await res.json();
-
-          if (data.success) {
-            tampilToast(`✅ ${domain} dinonaktifkan dari trusted list`, 'success');
-            muatTrusted();
-          }
-        } catch {
-          tampilToast('❌ Gagal menghubungi server', 'error');
-        }
-      }
-
-      //   SERVER STATUS
+      // ── SERVER STATUS ────────────────────────────────────────
       async function cekServer() {
         const dot = document.getElementById('serverDot');
         const text = document.getElementById('serverText');
@@ -1224,17 +1121,14 @@
         }
       }
 
-      //   STATS CARDS
+      // ── STAT CARDS ───────────────────────────────────────────
       async function muatStatsCards() {
         try {
           const res = await fetch('/admin/api/stats/detail');
           const data = await res.json();
           statsCache = data;
 
-          // Hitung total prediksi
           const totalPrediksi = Object.values(data.prediksi_per_kategori || {}).reduce((a, b) => a + b, 0);
-
-          // Hitung verified (total - pending)
           const totalLaporan = Object.values(data.laporan_per_kategori || {}).reduce((a, b) => a + b, 0);
           const verified = totalLaporan - (data.pending_review || 0);
 
@@ -1243,18 +1137,14 @@
           document.getElementById('statVerified').textContent = Math.max(verified, 0);
           document.getElementById('statPhishing').textContent = data.laporan_per_kategori?.['phishing'] || 0;
           document.getElementById('statJudol').textContent = data.laporan_per_kategori?.['judi_online'] || 0;
-
-          // Update badge pending di panel header
-          document.getElementById('badgePending').textContent = `${data.pending_review || 0} pending`;
-
-          // Update waktu
+          document.getElementById('badgePending').textContent = `${data.pending_review || 0} Pending`;
           document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
         } catch (e) {
           console.error('Gagal muat stats:', e);
         }
       }
 
-      //   TABEL LAPORAN
+      // ── TABEL LAPORAN ────────────────────────────────────────
       async function muatLaporan() {
         const tbody = document.getElementById('tabelLaporan');
         tbody.innerHTML = `<tr class="state-row"><td colspan="6"><span class="spin">↻</span> Memuat...</td></tr>`;
@@ -1274,21 +1164,24 @@
           tbody.innerHTML = data.reports
             .map((r) => {
               const isPending = r.verified == 0;
-              const statusBadge = isPending ? `<span class="badge pending">⏳ Pending</span>` : `<span class="badge verified">✅ Verified</span>`;
+              const isRejected = r.verified == 2;
+              // verified=0 → Pending, verified=1 → Verified, verified=2 → Rejected
 
+              const statusBadge = isPending ? `<span class="badge pending">⏳ Pending</span>` : isRejected ? `<span class="badge rejected">✗ Ditolak</span>` : `<span class="badge verified">✅ Verifed</span>`;
+
+              // Tombol aksi hanya muncul untuk yang masih Pending
+              // Verified dan Rejected sudah tidak bisa diubah (tampil teks saja)
               const aksiHtml = isPending
                 ? `<div class="action-wrap">
-                 <button class="btn-action verify" onclick="reviewLaporan(${r.id}, 'verify')">✓ Verify</button>
-                 <button class="btn-action reject" onclick="reviewLaporan(${r.id}, 'reject')">✗ Tolak</button>
+                 <button class="btn-action verify" onclick="reviewLaporan(${r.id},'verify')">✓ Verify</button>
+                 <button class="btn-action reject" onclick="reviewLaporan(${r.id},'reject')">✗ Tolak</button>
                </div>`
-                : `<span class="reviewed-text">Sudah direview</span>`;
+                : `<span class="reviewed-text">${isRejected ? 'Ditolak' : 'Terverifikasi'}</span>`;
 
               return `
             <tr id="row-${r.id}">
               <td class="td-id">#${r.id}</td>
-              <td class="td-url">
-                <span class="url-text" title="${r.url}">${r.url}</span>
-              </td>
+              <td class="td-url"><span class="url-text" title="${r.url}">${r.url}</span></td>
               <td><span class="badge ${r.kategori}">${r.kategori}</span></td>
               <td>${statusBadge}</td>
               <td class="td-time">${formatWaktu(r.timestamp)}</td>
@@ -1296,7 +1189,7 @@
             </tr>`;
             })
             .join('');
-        } catch (e) {
+        } catch {
           tbody.innerHTML = `<tr class="state-row"><td colspan="6">❌ Gagal memuat data</td></tr>`;
         }
       }
@@ -1304,7 +1197,7 @@
       function filterLaporan(status, btnEl) {
         filterAktif = status;
         document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
-        btnEl.classList.add('active');
+        if (btnEl) btnEl.classList.add('active');
         muatLaporan();
       }
 
@@ -1316,7 +1209,6 @@
             body: JSON.stringify({ action }),
           });
           const data = await res.json();
-
           if (data.success) {
             tampilToast(action === 'verify' ? '✅ Laporan diverifikasi!' : '✗ Laporan ditolak', action === 'verify' ? 'success' : 'error');
             muatLaporan();
@@ -1327,9 +1219,9 @@
         }
       }
 
-      //   STATISTIK
+      // ── STATISTIK ────────────────────────────────────────────
       const WARNA_KATEGORI = {
-        aman: { warna: '#22c55e', ikon: '🟢' },
+        aman: { warna: '#4caf50', ikon: '🟢' },
         phishing: { warna: '#ef4444', ikon: '🔴' },
         judi_online: { warna: '#f97316', ikon: '🟠' },
         suspicious: { warna: '#f59e0b', ikon: '🟡' },
@@ -1342,7 +1234,7 @@
         const total = Object.values(dataObj).reduce((a, b) => a + b, 0);
 
         if (total === 0) {
-          el.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">Belum ada data</div>`;
+          el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Belum ada data</div>`;
           return;
         }
 
@@ -1355,7 +1247,7 @@
             <div class="kategori-dot" style="background:${cfg.warna}"></div>
             <div class="kategori-name">${cfg.ikon} ${kat}</div>
             <div class="kategori-bar-wrap">
-              <div class="kategori-bar" style="width:${persen}%; background:${cfg.warna}"></div>
+              <div class="kategori-bar" style="width:${persen}%;background:${cfg.warna}"></div>
             </div>
             <div class="kategori-count">${jml}</div>
           </div>`;
@@ -1368,16 +1260,12 @@
           const res = await fetch('/admin/api/stats/detail');
           const data = await res.json();
 
-          // Prediksi per kategori
           renderKategoriList('listPrediksi', data.prediksi_per_kategori || {});
-
-          // Laporan per kategori
           renderKategoriList('listLaporan', data.laporan_per_kategori || {});
 
-          // Top URLs
           const topEl = document.getElementById('listTopUrl');
           if (!data.top_reported_urls || data.top_reported_urls.length === 0) {
-            topEl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">Belum ada URL yang sering dilaporkan</div>`;
+            topEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Belum ada URL yang sering dilaporkan</div>`;
           } else {
             topEl.innerHTML = data.top_reported_urls
               .map(
@@ -1385,7 +1273,7 @@
             <div class="url-rank-item">
               <div class="rank-num">${i + 1}</div>
               <div class="rank-url" title="${item.url}">${item.url}</div>
-              <div class="rank-count">${item.jumlah}×</div>
+              <div class="rank-count">${item.jumlah}x</div>
             </div>`,
               )
               .join('');
@@ -1395,25 +1283,166 @@
         }
       }
 
-      //   REFRESH ALL
+      // ── KANDIDAT ─────────────────────────────────────────────
+      async function muatKandidat() {
+        const tbody = document.getElementById('tabelKandidat');
+        tbody.innerHTML = `<tr class="state-row"><td colspan="5"><span class="spin">↻</span> Memuat...</td></tr>`;
+
+        try {
+          const res = await fetch('/admin/api/kandidat');
+          const data = await res.json();
+
+          const badge = document.getElementById('badgeKandidat');
+          const nav = document.getElementById('navBadgeKandidat');
+
+          if (!data.kandidat || data.kandidat.length === 0) {
+            tbody.innerHTML = `<tr class="state-row"><td colspan="5">Tidak ada kandidat baru - semua URL sudah diproses</td></tr>`;
+            badge.textContent = '0 Kandidat';
+            nav.style.display = 'none';
+            return;
+          }
+
+          badge.textContent = `${data.kandidat.length} Kandidat`;
+          nav.textContent = data.kandidat.length;
+          nav.style.display = 'inline-block';
+
+          tbody.innerHTML = data.kandidat
+            .map((k) => {
+              const rekBadge = k.rekomendasi === 'blacklist' ? `<span class="badge phishing">🚫 Blacklist</span>` : `<span class="badge aman">✅ Whitelist</span>`;
+
+              const aksiHtml =
+                k.rekomendasi === 'blacklist'
+                  ? `<div class="action-wrap">
+                 <button class="btn-action blacklist" onclick="tambahBlacklist('${k.url}','${k.kategori_dominan}')">🚫 Tambah ke Blacklist</button>
+               </div>`
+                  : `<div class="action-wrap">
+                 <button class="btn-action whitelist" onclick="tambahWhitelist('${k.url}')">✅ Tambah ke Whitelist</button>
+               </div>`;
+
+              return `
+            <tr>
+              <td class="td-url"><span class="url-text" title="${k.url}">${k.url}</span></td>
+              <td><span class="badge ${k.kategori_dominan}">${k.kategori_dominan}</span></td>
+              <td style="font-weight:700;color:#fff;">${k.jumlah_verified}×</td>
+              <td>${rekBadge}</td>
+              <td>${aksiHtml}</td>
+            </tr>`;
+            })
+            .join('');
+
+          document.getElementById('infoThreshold').textContent = data.threshold || 3;
+        } catch {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="5">❌ Gagal memuat data</td></tr>`;
+        }
+      }
+
+      async function tambahBlacklist(url, kategori) {
+        if (!confirm(`Tambahkan "${url}" ke blacklist sebagai ${kategori}?`)) return;
+        try {
+          const res = await fetch('/admin/api/blacklist/tambah', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, kategori }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            tampilToast(`✅ ${url} ditambahkan ke blacklist`, 'success');
+            muatKandidat();
+          } else {
+            tampilToast('❌ ' + (data.error || 'Gagal'), 'error');
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
+      }
+
+      async function tambahWhitelist(url) {
+        if (!confirm(`Tambahkan "${url}" ke whitelist (trusted)?`)) return;
+        try {
+          const res = await fetch('/admin/api/trusted/tambah', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, alasan: 'false_positive_crowdsourcing' }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            tampilToast(`✅ ${url} ditambahkan ke whitelist`, 'success');
+            muatKandidat();
+            muatTrusted();
+          } else {
+            tampilToast('❌ ' + (data.error || 'Gagal'), 'error');
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
+      }
+
+      async function muatTrusted() {
+        const tbody = document.getElementById('tabelTrusted');
+        tbody.innerHTML = `<tr class="state-row"><td colspan="4"><span class="spin">↻</span> Memuat...</td></tr>`;
+        try {
+          const res = await fetch('/admin/api/trusted');
+          const data = await res.json();
+
+          if (!data.trusted || data.trusted.length === 0) {
+            tbody.innerHTML = `<tr class="state-row"><td colspan="4">Belum ada trusted domain</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = data.trusted
+            .map(
+              (t) => `
+          <tr>
+            <td style="font-family:monospace;font-size:11px;color:#60a5fa">${t.domain}</td>
+            <td style="font-size:11px;color:var(--text-muted)">${t.alasan}</td>
+            <td class="td-time">${formatWaktu(t.ditambah_at)}</td>
+            <td>
+              <button class="btn-action reject" onclick="nonaktifTrusted(${t.id},'${t.domain}')">
+                ✕ Nonaktifkan
+              </button>
+            </td>
+          </tr>`,
+            )
+            .join('');
+        } catch {
+          tbody.innerHTML = `<tr class="state-row"><td colspan="4">❌ Gagal memuat</td></tr>`;
+        }
+      }
+
+      async function nonaktifTrusted(id, domain) {
+        if (!confirm(`Nonaktifkan ${domain} dari trusted list?`)) return;
+        try {
+          const res = await fetch(`/admin/api/trusted/${id}/nonaktif`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            tampilToast(`✅ ${domain} dinonaktifkan dari trusted list`, 'success');
+            muatTrusted();
+          }
+        } catch {
+          tampilToast('❌ Gagal menghubungi server', 'error');
+        }
+      }
+
+      // ── REFRESH ALL ──────────────────────────────────────────
       async function refreshAll() {
         const icon = document.getElementById('refreshIcon');
         icon.classList.add('spin');
-        icon.textContent = '↻';
-
-        await Promise.all([cekServer(), muatStatsCards(), sectionAktif === 'laporan' ? muatLaporan() : Promise.resolve(), sectionAktif === 'statistik' ? muatStatistik() : Promise.resolve()]);
-
+        await Promise.all([
+          cekServer(),
+          muatStatsCards(),
+          sectionAktif === 'laporan' ? muatLaporan() : Promise.resolve(),
+          sectionAktif === 'statistik' ? muatStatistik() : Promise.resolve(),
+          sectionAktif === 'kandidat' ? muatKandidat() : Promise.resolve(),
+        ]);
         icon.classList.remove('spin');
       }
 
-      //   INIT
+      // ── INIT ─────────────────────────────────────────────────
       (async function init() {
         await cekServer();
         await muatStatsCards();
         await muatLaporan();
-
-        // Auto refresh setiap 30 detik
-        setInterval(refreshAll, 30000);
+        setInterval(refreshAll, 30000); // auto-refresh tiap 30 detik
       })();
     </script>
   </body>
