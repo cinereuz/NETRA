@@ -2,35 +2,78 @@ import requests
 
 # Daftar URL yang mau ditest
 URL_TEST = [
+    # # Harusnya AMAN
+    # "https://sipadu.politala.ac.id/gate/login",
+    # "https://siakad.ugm.ac.id/login",
+    # "https://pajak.go.id/login",
+    # "https://bpjs-kesehatan.go.id/account",
+    # "https://github.com",
+    # "https://kompas.com",
+
+    # # Harusnya PHISHING
+    # "http://paypal-secure-login.tk",
+    # "http://bca-update-akun.xyz",
+    # "http://verify-account.ml",
+    # "http://192.168.1.1/login",
+    # "http://login-bank.go.id/account",
+
+    # # Harusnya JUDI_ONLINE
+    # "https://slot-gacor-maxwin.xyz",
+    # "http://togel-online-terpercaya.com",
+    # "https://sbobet.com",
+    # "http://mahjong-ways-scatter.online",
+
+    # # Harusnya DOMAIN_TIDAK_ADA
+    # "https://googgle.com",
+    # "https://facebok.com",
+    # "https://tokopedai.com",
+    # "https://namakami123xyz.com",
+
+    # # Harusnya TIDAK_DAPAT_DIAKSES
+    # "https://192.0.2.1/test",
+
+    # Test v2
     # Harusnya AMAN
-    "https://sipadu.politala.ac.id/gate/login",
-    "https://siakad.ugm.ac.id/login",
-    "https://pajak.go.id/login",
-    "https://bpjs-kesehatan.go.id/account",
-    "https://github.com",
-    "https://kompas.com",
+    "https://google.com",
+    "https://youtube.com",
+    "https://tokopedia.com",
+    "https://ui.ac.id",
+    "https://ugm.ac.id",
+    "https://kemenkeu.go.id",
+    "https://www.detik.com/news/berita/polisi-tangkap-bandar-slot-gacor",
+    "https://www.kompas.com/tren/read/2024/bahaya-judi-slot-online",
+    "https://nasional.tempo.co/read/bahaya-judi-online-slot-gacor",
 
-    # Harusnya PHISHING
-    "http://paypal-secure-login.tk",
-    "http://bca-update-akun.xyz",
-    "http://verify-account.ml",
+    # Harusnya Phishing
+    "https://pajak.com",
+    "https://bpjs.net",
+    "https://kemendikbud.com",
     "http://192.168.1.1/login",
-    "http://login-bank.go.id/account",
+    "http://10.0.0.1/secure/banking",
+    "http://user@evil-site.com/steal",
+    "http://paypal-secure-login.com/verify",
+    "http://bca-mobile-update.net/login",
+    "http://mandiri-online-banking.xyz/masuk",
 
-    # Harusnya JUDI_ONLINE
-    "https://slot-gacor-maxwin.xyz",
-    "http://togel-online-terpercaya.com",
-    "https://sbobet.com",
-    "http://mahjong-ways-scatter.online",
+    # Harusnya Judi Online
+    "http://slotgacor88win.xyz/daftar",
+    "http://judionline-terpercaya.net/slot",
+    "http://pragmaticplay-slot.com/login",
 
-    # Harusnya DOMAIN_TIDAK_ADA
-    "https://googgle.com",
-    "https://facebok.com",
-    "https://tokopedai.com",
-    "https://namakami123xyz.com",
+    # Harusnya Domain Tidak Ada
+    "https://palsubanget.ac.id",
+    "https://initidakada.go.id",
+    "https://domainmati123.sch.id",
+    "https://arnold.go.id",
+    "https://website-yang-tidak-pernah-ada-sama-sekali-xyz123.com",
+    "https://asjdhaksjdhaksjdh.net",
 
-    # Harusnya TIDAK_DAPAT_DIAKSES
-    "https://192.0.2.1/test",
+    # Harusnya Tidak Dapat Diakses
+    "http://localhost:9999",
+
+    # Sus
+    "http://promo-tokopedia.net/flash-sale",
+    "http://shopee-id-promo.com/voucher",
 ]
 
 # Warna terminal untuk output lebih mudah dibaca

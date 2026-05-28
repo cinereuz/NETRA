@@ -7,6 +7,7 @@ import urllib.error
 import socket
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import sqlite3
 from difflib import SequenceMatcher
 from .feature_extractor import extract_features
@@ -323,14 +324,15 @@ class NetraPredictor:
 
     # LAYER 3: Supervised ML
     def _prediksi_supervised(self, features_dict):
-        features_values = [[features_dict[col] for col in self.FEATURE_COLUMNS]]
+        # DataFrame memastikan nama & urutan kolom cocok dengan saat training
+        df = pd.DataFrame([features_dict])[self.FEATURE_COLUMNS]
 
         # predict() → angka label (0, 1, atau 2)
-        label_angka = self.hybrid_model.predict(features_values)[0]
+        label_angka = self.hybrid_model.predict(df)[0]
 
         # predict_proba() → array probabilitas
         # Index 0=aman, 1=phishing, 2=judi_online
-        proba = self.hybrid_model.predict_proba(features_values)[0]
+        proba = self.hybrid_model.predict_proba(df)[0]
 
         # Confidence = probabilitas label yang dipilih × 100
         confidence = float(proba[label_angka]) * 100
@@ -342,8 +344,9 @@ class NetraPredictor:
         if not self.unsupervised_loaded:
             return False, 0.0, 0.0
 
-        fitur_array  = np.array([[features_dict[col] for col in self.FEATURE_COLUMNS]])
-        fitur_scaled = self.scaler_if.transform(fitur_array)
+        # DataFrame memastikan nama & urutan kolom cocok dengan saat training
+        df           = pd.DataFrame([features_dict])[self.FEATURE_COLUMNS]
+        fitur_scaled = self.scaler_if.transform(df)
 
         # predict(): -1 = anomali (mencurigakan), +1 = normal
         prediksi = self.iso_forest.predict(fitur_scaled)[0]
@@ -363,7 +366,6 @@ class NetraPredictor:
 
     # FUNGSI UTAMA
     def predict(self, url):
-        # Validasi input
         if not url or not isinstance(url, str):
             return self._format(
                 kategori   = 'tidak_dapat_diakses',
@@ -378,23 +380,18 @@ class NetraPredictor:
         url = url.strip()
         if not url.startswith(('http://', 'https://')):
             url = 'http://' + url
-        
+
         from urllib.parse import urlparse, urlunparse
-        parsed = urlparse(url)
-
+        parsed      = urlparse(url)
         path_bersih = parsed.path if parsed.path != '/' else ''
-
-        url = urlunparse((
-            parsed.scheme,
-            parsed.netloc,
-            path_bersih,
-            parsed.params,
-            parsed.query,
-            parsed.fragment
+        url         = urlunparse((
+            parsed.scheme, parsed.netloc, path_bersih,
+            parsed.params, parsed.query, parsed.fragment
         ))
 
-        # Layer 1A: Whitelist
         domain_utama = self._ekstrak_domain_utama(url)
+
+        # LAYER 1A — Whitelist
         if domain_utama in WHITELIST or self._cek_whitelist(url):
             return self._format(
                 kategori   = 'aman',
@@ -405,20 +402,20 @@ class NetraPredictor:
                 if_score   = 0,
                 reach_info = None,
             )
-        # Trusted Domain (false positive terverifikasi)
-        domain_cek = self._ekstrak_domain_utama(url)
-        if domain_cek in TRUSTED_DOMAINS:
+
+        # LAYER 1A+ — Trusted domain terverifikasi komunitas
+        if domain_utama in TRUSTED_DOMAINS:
             return self._format(
                 kategori   = 'aman',
                 confidence = 85.0,
                 method     = 'trusted_domain_verified',
-                detail     = f'Domain {domain_cek} diverifikasi aman oleh komunitas pengguna',
+                detail     = f'Domain {domain_utama} diverifikasi aman oleh komunitas pengguna',
                 is_anomali = False,
                 if_score   = 0,
                 reach_info = None,
             )
 
-        # Layer 1B: Blacklist
+        # LAYER 1B — Blacklist (kepastian berbahaya tertinggi)
         if self._cek_blacklist(url):
             return self._format(
                 kategori   = 'judi_online',
@@ -430,20 +427,20 @@ class NetraPredictor:
                 reach_info = None,
             )
 
-        # Layer 1C: Regex Judi
-        match_judi = GAMBLING_REGEX.search(url)
-        if match_judi:
+        # LAYER 1E — Brand + TLD Mismatch (regulasi PANDI)
+        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
+        if is_mismatch:
             return self._format(
-                kategori   = 'judi_online',
+                kategori   = 'phishing',
                 confidence = 95.0,
-                method     = 'rule_based_regex',
-                detail     = f'Keyword judi terdeteksi: "{match_judi.group()}"',
+                method     = 'rule_based_brand_tld',
+                detail     = mismatch_detail,
                 is_anomali = True,
-                if_score   = 90,
+                if_score   = 85,
                 reach_info = None,
             )
 
-        # Layer 1D: Regex Phishing
+        # LAYER 1D — Regex Phishing Kritis (IP address / simbol @)
         match_phish = PHISHING_REGEX.search(url)
         if match_phish:
             return self._format(
@@ -456,51 +453,12 @@ class NetraPredictor:
                 reach_info = None,
             )
 
-        # Layer 1E: Brand + TLD Mismatch
-        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
-        if is_mismatch:
-            return self._format(
-                kategori   = 'phishing',
-                confidence = 95.0,
-                method     = 'rule_based_brand_tld',
-                detail     = mismatch_detail,
-                is_anomali = True,
-                if_score   = 85,
-                reach_info = None,
-            )
-        
-        # Layer 1F: TLD Resmi PANDI
+        # LAYER 1F — Deteksi TLD PANDI
         is_pandi_safe, pandi_tld = self._cek_pandi_tld(url)
-        if is_pandi_safe:
-            return self._format(
-                kategori   = 'aman',
-                confidence = 97.0,
-                method     = 'rule_based_pandi_tld',
-                detail     = (f'Domain .{pandi_tld} diverifikasi PANDI — '
-                              f'tidak bisa didaftarkan sembarang pihak'),
-                is_anomali = False,
-                if_score   = 0,
-                reach_info = None,
-            )
-        
-        # Layer 1G: Typosquatting Detection
-        is_typo, brand_asli, skor = self._cek_typosquatting(url)
-        if is_typo:
-            persen = round(skor * 100, 1)
-            return self._format(
-                kategori   = 'phishing',
-                confidence = 93.0,
-                method     = 'rule_based_typosquatting',
-                detail     = (f'Domain mirip "{brand_asli}" ({persen}% similarity) '
-                              f'— terindikasi typosquatting'),
-                is_anomali = True,
-                if_score   = 85,
-                reach_info = None,
-            )
-        
-        # Layer 2: HTTP Reachability Check
+
+        # LAYER 2 — HTTP Reachability Check
         reach_info = self._cek_reachability(url)
- 
+
         if not reach_info['is_reachable']:
             return self._format(
                 kategori   = reach_info['kategori_reach'],
@@ -512,8 +470,20 @@ class NetraPredictor:
                 reach_info = reach_info,
             )
 
-        # Layer 3: Supervised ML
-        # Ekstrak fitur URL untuk ML
+        # LAYER 1F (lanjutan) — Return AMAN untuk TLD PANDI yang sudah exist 
+        if is_pandi_safe:
+            return self._format(
+                kategori   = 'aman',
+                confidence = 97.0,
+                method     = 'rule_based_pandi_tld',
+                detail     = (f'Domain .{pandi_tld} diverifikasi PANDI — '
+                              f'tidak bisa didaftarkan sembarang pihak'),
+                is_anomali = False,
+                if_score   = 0,
+                reach_info = reach_info,
+            )
+
+        # LAYER 3 — Supervised ML (RF+LR Hybrid)
         features_dict = extract_features(url)
 
         if not self.supervised_loaded:
@@ -530,7 +500,7 @@ class NetraPredictor:
         label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
         kategori = self.LABEL_MAP[label_angka]
 
-        # Layer 4: Isolation Forest
+        # LAYER 4 — Isolation Forest (Unsupervised ML)
         is_anomali = False
         if_score   = 0.0
         if_aktif   = False
@@ -550,29 +520,47 @@ class NetraPredictor:
                     else:
                         if_detail = (f'IF: sedikit anomali (score: {if_score:.0f}), '
                                      f'tidak cukup untuk override → tetap aman')
-
                 else:
                     confidence_sv = min(confidence_sv + IF_ANOMALY_BOOST, 95.0)
                     if_detail     = f'IF konfirmasi: anomali (score: {if_score:.0f})'
-
             else:
                 if kategori != 'aman':
                     confidence_sv = max(confidence_sv - 15.0, 45.0)
                     if_detail     = f'IF: URL terlihat normal (score: {if_score:.0f}), confidence diturunkan'
                     if confidence_sv < CONFIDENCE_THRESHOLD:
-                            kategori  = 'suspicious'
-                            if_detail = (f'IF: URL terlihat normal (score: {if_score:.0f}), '
-                                        f'confidence {confidence_sv:.1f}% < threshold '
-                                        f'→ turun ke suspicious')
+                        kategori  = 'suspicious'
+                        if_detail = (f'IF: URL terlihat normal (score: {if_score:.0f}), '
+                                     f'confidence {confidence_sv:.1f}% < threshold '
+                                     f'→ turun ke suspicious')
                 else:
                     if_detail = f'IF: normal (score: {if_score:.0f})'
+
+        # LAYER 1C — Regex Judol (POST-ML FALLBACK)
+        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
+            match_judi = GAMBLING_REGEX.search(url)
+            if match_judi:
+                kategori      = 'judi_online'
+                confidence_sv = 88.0
+                if_detail     = (if_detail + ' | ' if if_detail else '') + \
+                                f'Keyword judi konfirmasi: "{match_judi.group()}"'
+                if not if_aktif:
+                    if_aktif = True
+
+        # LAYER 1G — Typosquatting Detection (POST-ML FALLBACK)
+        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
+            is_typo, brand_asli, skor_typo = self._cek_typosquatting(url)
+            if is_typo:
+                persen        = round(skor_typo * 100, 1)
+                kategori      = 'phishing'
+                confidence_sv = 90.0
+                if_detail     = (if_detail + ' | ' if if_detail else '') + \
+                                f'Typosquatting: mirip "{brand_asli}" ({persen}%)'
 
         if if_aktif:
             method = 'hybrid_supervised_unsupervised'
         else:
             method = 'ml_supervised_only'
 
-        # Detail log untuk debugging
         detail = f'RF+LR Ensemble | Prob aman:{proba[0]:.2f} phishing:{proba[1]:.2f} judi:{proba[2]:.2f}'
         if if_detail:
             detail += f' | {if_detail}'
