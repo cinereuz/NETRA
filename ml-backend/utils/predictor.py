@@ -112,9 +112,9 @@ class NetraPredictor:
     # LAYER 1: Rule-Based
     def _cek_whitelist(self, url):
         url_lower = url.lower()
-
         if any(domain in url_lower for domain in WHITELIST):
             return True
+        
         try:
             from urllib.parse import urlparse
             hostname = urlparse(url_lower).netloc
@@ -218,17 +218,13 @@ class NetraPredictor:
 
         try:
             domain_utama = self._ekstrak_domain_utama(url)
-
             for tld in PANDI_STRICT:
                 if domain_utama.endswith('.' + tld):
-                    return True, tld, False 
-
+                    return True, tld, False
             for tld in PANDI_FLEX:
                 if domain_utama.endswith('.' + tld):
                     return False, tld, True
-
             return False, '', False
-
         except Exception:
             return False, '', False
     
@@ -417,7 +413,7 @@ class NetraPredictor:
 
         domain_utama = self._ekstrak_domain_utama(url)
 
-        # WHITELIST_BYPASS: domain yang TIDAK perlu dicek reachability.
+        # WHITELIST_BYPASS: domain lokal/dev yang tidak bisa di-ping dari internet
         WHITELIST_BYPASS = {'localhost', 'localhost:5000', '127.0.0.1'}
 
         # LAYER 1A — Whitelist & Trusted Domain
@@ -469,7 +465,7 @@ class NetraPredictor:
                 reach_info = reach_info_wl,
             )
 
-        # LAYER 1B — Blacklist (kepastian berbahaya tertinggi)
+        # LAYER 1B — Blacklist
         if self._cek_blacklist(url):
             return self._format(
                 kategori   = 'judi_online',
@@ -481,14 +477,14 @@ class NetraPredictor:
                 reach_info = None,
             )
 
-        # LAYER 1E — Brand + TLD Mismatch (regulasi PANDI)
-        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
-        if is_mismatch:
+        # LAYER 1C — Regex Judol
+        match_judi = GAMBLING_REGEX.search(url)
+        if match_judi:
             return self._format(
-                kategori   = 'phishing',
-                confidence = 95.0,
-                method     = 'rule_based_brand_tld',
-                detail     = mismatch_detail,
+                kategori   = 'judi_online',
+                confidence = 92.0,
+                method     = 'rule_based_gambling_regex',
+                detail     = f'Pola judi online terdeteksi: "{match_judi.group()}"',
                 is_anomali = True,
                 if_score   = 85,
                 reach_info = None,
@@ -507,10 +503,37 @@ class NetraPredictor:
                 reach_info = None,
             )
 
+        # LAYER 1E — Brand + TLD Mismatch (regulasi PANDI)
+        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
+        if is_mismatch:
+            return self._format(
+                kategori   = 'phishing',
+                confidence = 95.0,
+                method     = 'rule_based_brand_tld',
+                detail     = mismatch_detail,
+                is_anomali = True,
+                if_score   = 85,
+                reach_info = None,
+            )
+
+        # LAYER 1G — Typosquatting
+        is_typo, brand_asli, skor_typo = self._cek_typosquatting(url)
+        if is_typo:
+            persen = round(skor_typo * 100, 1)
+            return self._format(
+                kategori   = 'phishing',
+                confidence = 90.0,
+                method     = 'rule_based_typosquatting',
+                detail     = f'Typosquatting: mirip "{brand_asli}" ({persen}%)',
+                is_anomali = True,
+                if_score   = 82,
+                reach_info = None,
+            )
+
         # LAYER 1F — Deteksi TLD PANDI
         is_pandi_strict, pandi_tld, is_pandi_flex = self._cek_pandi_tld(url)
 
-        # LAYER 2 — HTTP Reachability Check
+        # LAYER 2 — HTTP Reachability Check (setelah semua rule non-network selesai)
         reach_info = self._cek_reachability(url)
 
         if not reach_info['is_reachable']:
@@ -524,7 +547,7 @@ class NetraPredictor:
                 reach_info = reach_info,
             )
 
-        # LAYER 1F (lanjutan) — Return AMAN untuk TLD PANDI strict yang sudah terbukti exist
+        # LAYER 1F (lanjutan) — PANDI strict + reachable → langsung AMAN
         if is_pandi_strict:
             return self._format(
                 kategori   = 'aman',
@@ -564,8 +587,7 @@ class NetraPredictor:
                     kategori = 'suspicious'
                 pandi_flex_note = (
                     f'[PANDI .{pandi_tld}] ML: phishing {confidence_sv_lama:.1f}% → '
-                    f'diturunkan ke {confidence_sv:.1f}% karena domain .{pandi_tld} '
-                    f'terdaftar & reachable (kemungkinan false positive URL panjang)'
+                    f'diturunkan ke {confidence_sv:.1f}% (domain .{pandi_tld} reachable)'
                 )
             elif kategori == 'suspicious':
                 confidence_sv_lama = confidence_sv
@@ -610,27 +632,6 @@ class NetraPredictor:
                                      f'→ turun ke suspicious')
                 else:
                     if_detail = f'IF: normal (score: {if_score:.0f})'
-
-        # LAYER 1C — Regex Judol (POST-ML FALLBACK)
-        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
-            match_judi = GAMBLING_REGEX.search(url)
-            if match_judi:
-                kategori      = 'judi_online'
-                confidence_sv = 88.0
-                if_detail     = (if_detail + ' | ' if if_detail else '') + \
-                                f'Keyword judi konfirmasi: "{match_judi.group()}"'
-                if not if_aktif:
-                    if_aktif = True
-
-        # LAYER 1G — Typosquatting Detection (POST-ML FALLBACK)
-        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
-            is_typo, brand_asli, skor_typo = self._cek_typosquatting(url)
-            if is_typo:
-                persen        = round(skor_typo * 100, 1)
-                kategori      = 'phishing'
-                confidence_sv = 90.0
-                if_detail     = (if_detail + ' | ' if if_detail else '') + \
-                                f'Typosquatting: mirip "{brand_asli}" ({persen}%)'
 
         if if_aktif:
             method = 'hybrid_supervised_unsupervised'
