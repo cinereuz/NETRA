@@ -115,6 +115,7 @@ class NetraPredictor:
 
         if any(domain in url_lower for domain in WHITELIST):
             return True
+
         try:
             from urllib.parse import urlparse
             hostname = urlparse(url_lower).netloc
@@ -218,17 +219,13 @@ class NetraPredictor:
 
         try:
             domain_utama = self._ekstrak_domain_utama(url)
-
             for tld in PANDI_STRICT:
                 if domain_utama.endswith('.' + tld):
-                    return True, tld, False 
-
+                    return True, tld, False  # (is_strict, tld, is_flex)
             for tld in PANDI_FLEX:
                 if domain_utama.endswith('.' + tld):
-                    return False, tld, True
-
+                    return False, tld, True  # (is_strict, tld, is_flex)
             return False, '', False
-
         except Exception:
             return False, '', False
     
@@ -417,10 +414,10 @@ class NetraPredictor:
 
         domain_utama = self._ekstrak_domain_utama(url)
 
-        # WHITELIST_BYPASS: domain yang TIDAK perlu dicek reachability.
+        # WHITELIST_BYPASS: domain lokal/dev yang tidak bisa di-ping dari internet
         WHITELIST_BYPASS = {'localhost', 'localhost:5000', '127.0.0.1'}
 
-        # LAYER 1A — Whitelist & Trusted Domain
+        # LAYER 1A — Whitelist & Trusted
         is_whitelisted = (domain_utama in WHITELIST or self._cek_whitelist(url))
         is_trusted     = (domain_utama in TRUSTED_DOMAINS)
 
@@ -469,7 +466,7 @@ class NetraPredictor:
                 reach_info = reach_info_wl,
             )
 
-        # LAYER 1B — Blacklist (kepastian berbahaya tertinggi)
+        # LAYER 1B — Blacklist: sudah pasti berbahaya, skip voting
         if self._cek_blacklist(url):
             return self._format(
                 kategori   = 'judi_online',
@@ -481,38 +478,12 @@ class NetraPredictor:
                 reach_info = None,
             )
 
-        # LAYER 1E — Brand + TLD Mismatch (regulasi PANDI)
-        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
-        if is_mismatch:
-            return self._format(
-                kategori   = 'phishing',
-                confidence = 95.0,
-                method     = 'rule_based_brand_tld',
-                detail     = mismatch_detail,
-                is_anomali = True,
-                if_score   = 85,
-                reach_info = None,
-            )
-
-        # LAYER 1D — Regex Phishing Kritis (IP address / simbol @)
-        match_phish = PHISHING_REGEX.search(url)
-        if match_phish:
-            return self._format(
-                kategori   = 'phishing',
-                confidence = 92.0,
-                method     = 'rule_based_regex',
-                detail     = 'Pola phishing kritis terdeteksi (IP/simbol @)',
-                is_anomali = True,
-                if_score   = 88,
-                reach_info = None,
-            )
-
-        # LAYER 1F — Deteksi TLD PANDI
+        # REACHABILITY CHECK
+        # LAYER 1F flag
         is_pandi_strict, pandi_tld, is_pandi_flex = self._cek_pandi_tld(url)
 
-        # LAYER 2 — HTTP Reachability Check
+        # LAYER 2 — Reachability
         reach_info = self._cek_reachability(url)
-
         if not reach_info['is_reachable']:
             return self._format(
                 kategori   = reach_info['kategori_reach'],
@@ -524,7 +495,7 @@ class NetraPredictor:
                 reach_info = reach_info,
             )
 
-        # LAYER 1F (lanjutan) — Return AMAN untuk TLD PANDI strict yang sudah terbukti exist
+        # LAYER 1F lanjutan — PANDI strict + reachable → langsung AMAN (skip voting)
         if is_pandi_strict:
             return self._format(
                 kategori   = 'aman',
@@ -537,116 +508,109 @@ class NetraPredictor:
                 reach_info = reach_info,
             )
 
-        # LAYER 3 — Supervised ML (RF+LR Hybrid)
-        features_dict = extract_features(url)
+        # VOTING PHASE
+        votes   = []
+        sources = []
 
-        if not self.supervised_loaded:
-            return self._format(
-                kategori   = 'tidak_dapat_diakses',
-                confidence = 50.0,
-                method     = 'fallback',
-                detail     = 'Model tidak tersedia',
-                is_anomali = False,
-                if_score   = 0,
-                reach_info = reach_info,
-            )
-
-        label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
-        kategori = self.LABEL_MAP[label_angka]
-
-        # LAYER 1F (post-ML) — Koreksi hasil ML untuk domain PANDI flex (co.id, or.id, dll)
-        pandi_flex_note = ''
+        # VOTE dari LAYER 1F — PANDI flex (co.id, or.id, net.id, dll)
         if is_pandi_flex:
-            if kategori == 'phishing' and confidence_sv < 90.0:
-                confidence_sv_lama = confidence_sv
-                confidence_sv = max(confidence_sv - 20.0, 45.0)
-                if confidence_sv < CONFIDENCE_THRESHOLD:
-                    kategori = 'suspicious'
-                pandi_flex_note = (
-                    f'[PANDI .{pandi_tld}] ML: phishing {confidence_sv_lama:.1f}% → '
-                    f'diturunkan ke {confidence_sv:.1f}% karena domain .{pandi_tld} '
-                    f'terdaftar & reachable (kemungkinan false positive URL panjang)'
-                )
-            elif kategori == 'suspicious':
-                confidence_sv_lama = confidence_sv
-                confidence_sv = min(confidence_sv + 15.0, 75.0)
-                kategori = 'aman'
-                pandi_flex_note = (
-                    f'[PANDI .{pandi_tld}] ML: suspicious → naik ke aman '
-                    f'karena domain .{pandi_tld} terdaftar & reachable'
-                )
+            votes.append({'kategori': 'aman', 'confidence': 70.0, 'bobot': 0.8})
+            sources.append(f'PANDI flex (.{pandi_tld}): domain terdaftar & reachable')
 
-        # LAYER 4 — Isolation Forest (Unsupervised ML)
-        is_anomali = False
-        if_score   = 0.0
-        if_aktif   = False
-        if_detail  = ''
+        # VOTE dari LAYER 1E — Brand + TLD Mismatch
+        is_mismatch, mismatch_detail = self._cek_brand_tld_mismatch(url)
+        if is_mismatch:
+            votes.append({'kategori': 'phishing', 'confidence': 95.0, 'bobot': 1.5})
+            sources.append(f'BrandTLD: {mismatch_detail}')
 
-        if confidence_sv < CONFIDENCE_THRESHOLD and self.unsupervised_loaded:
-            if_aktif   = True
-            is_anomali, skor_raw, if_score = self._prediksi_isolation_forest(features_dict)
+        # VOTE dari LAYER 1D — Regex Phishing Kritis (IP / simbol @)
+        match_phish = PHISHING_REGEX.search(url)
+        if match_phish:
+            votes.append({'kategori': 'phishing', 'confidence': 92.0, 'bobot': 1.4})
+            sources.append('RegexPhishing: IP/@ terdeteksi')
 
-            if is_anomali:
-                if kategori == 'aman':
-                    if if_score > IF_OVERRIDE_THRESHOLD:
-                        kategori      = 'suspicious'
-                        confidence_sv = 45.0
-                        if_detail     = (f'IF: anomali tinggi (score: {if_score:.0f}), '
-                                         f'perlu verifikasi manual')
+        # VOTE dari LAYER 1C — Regex Judol
+        match_judi = GAMBLING_REGEX.search(url)
+        if match_judi:
+            votes.append({'kategori': 'judi_online', 'confidence': 88.0, 'bobot': 1.3})
+            sources.append(f'RegexJudi: "{match_judi.group()}"')
+
+        # VOTE dari LAYER 1G — Typosquatting
+        is_typo, brand_asli, skor_typo = self._cek_typosquatting(url)
+        if is_typo:
+            persen = round(skor_typo * 100, 1)
+            votes.append({'kategori': 'phishing', 'confidence': 90.0, 'bobot': 1.2})
+            sources.append(f'Typosquatting: mirip "{brand_asli}" ({persen}%)')
+
+        # VOTE dari LAYER 3 — Supervised ML (RF+LR Hybrid)
+        features_dict = extract_features(url)
+        is_anomali    = False
+        if_score      = 0.0
+        proba         = [0.0, 0.0, 0.0]
+
+        if self.supervised_loaded:
+            label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
+            kategori_ml = self.LABEL_MAP[label_angka]
+            votes.append({'kategori': kategori_ml, 'confidence': confidence_sv, 'bobot': 1.0})
+            sources.append(f'ML: {kategori_ml} ({confidence_sv:.1f}%)')
+
+            # VOTE dari LAYER 4 — Isolation Forest
+            if confidence_sv < CONFIDENCE_THRESHOLD and self.unsupervised_loaded:
+                is_anomali, skor_raw, if_score = self._prediksi_isolation_forest(features_dict)
+                if is_anomali:
+                    if kategori_ml == 'aman':
+                        votes.append({'kategori': 'suspicious', 'confidence': 60.0, 'bobot': 0.6})
+                        sources.append(f'IF: anomali (score:{if_score:.0f})')
                     else:
-                        if_detail = (f'IF: sedikit anomali (score: {if_score:.0f}), '
-                                     f'tidak cukup untuk override → tetap aman')
+                        votes.append({'kategori': kategori_ml, 'confidence': 65.0, 'bobot': 0.6})
+                        sources.append(f'IF: konfirmasi anomali (score:{if_score:.0f})')
                 else:
-                    confidence_sv = min(confidence_sv + IF_ANOMALY_BOOST, 95.0)
-                    if_detail     = f'IF konfirmasi: anomali (score: {if_score:.0f})'
-            else:
-                if kategori != 'aman':
-                    confidence_sv = max(confidence_sv - 15.0, 45.0)
-                    if_detail     = f'IF: URL terlihat normal (score: {if_score:.0f}), confidence diturunkan'
-                    if confidence_sv < CONFIDENCE_THRESHOLD:
-                        kategori  = 'suspicious'
-                        if_detail = (f'IF: URL terlihat normal (score: {if_score:.0f}), '
-                                     f'confidence {confidence_sv:.1f}% < threshold '
-                                     f'→ turun ke suspicious')
-                else:
-                    if_detail = f'IF: normal (score: {if_score:.0f})'
+                    votes.append({'kategori': 'aman', 'confidence': 55.0, 'bobot': 0.6})
+                    sources.append(f'IF: normal (score:{if_score:.0f})')
 
-        # LAYER 1C — Regex Judol (POST-ML FALLBACK)
-        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
-            match_judi = GAMBLING_REGEX.search(url)
-            if match_judi:
-                kategori      = 'judi_online'
-                confidence_sv = 88.0
-                if_detail     = (if_detail + ' | ' if if_detail else '') + \
-                                f'Keyword judi konfirmasi: "{match_judi.group()}"'
-                if not if_aktif:
-                    if_aktif = True
+        # AGREGASI VOTE — Menghitung skor tertimbang per kategori
+        # Rumus: skor_kategori = sum(confidence × bobot) untuk semua vote kategori
+        # Kategori dengan skor tertinggi = hasil final
+        skor = {
+            'aman'       : 0.0,
+            'phishing'   : 0.0,
+            'judi_online': 0.0,
+            'suspicious' : 0.0,
+        }
 
-        # LAYER 1G — Typosquatting Detection (POST-ML FALLBACK)
-        if kategori in ('suspicious', 'aman') and confidence_sv < CONFIDENCE_THRESHOLD:
-            is_typo, brand_asli, skor_typo = self._cek_typosquatting(url)
-            if is_typo:
-                persen        = round(skor_typo * 100, 1)
-                kategori      = 'phishing'
-                confidence_sv = 90.0
-                if_detail     = (if_detail + ' | ' if if_detail else '') + \
-                                f'Typosquatting: mirip "{brand_asli}" ({persen}%)'
+        for v in votes:
+            kat = v['kategori']
+            if kat in skor:
+                # Skor = confidence × bobot untuk setiap vote
+                skor[kat] += v['confidence'] * v['bobot']
 
-        if if_aktif:
-            method = 'hybrid_supervised_unsupervised'
+        if not votes:
+            kategori_final = 'suspicious'
+            confidence_final = 40.0
         else:
-            method = 'ml_supervised_only'
+            kategori_final = max(skor, key=skor.get)
 
-        detail = f'RF+LR Ensemble | Prob aman:{proba[0]:.2f} phishing:{proba[1]:.2f} judi:{proba[2]:.2f}'
-        if pandi_flex_note:
-            detail += f' | {pandi_flex_note}'
-        if if_detail:
-            detail += f' | {if_detail}'
+            # Confidence final = skor kategori pemenang dibagi total bobot semua vote
+            total_bobot    = sum(v['bobot'] for v in votes)
+            total_skor_max = skor[kategori_final]
+            confidence_final = min(total_skor_max / total_bobot, 100.0)
+            confidence_final = round(confidence_final, 1)
+
+        detail_votes = ' | '.join(sources) if sources else 'Tidak ada sinyal'
+        detail = (
+            f'Voting [{len(votes)} sinyal] → {kategori_final} ({confidence_final:.1f}%) '
+            f'| Skor: aman={skor["aman"]:.0f} '
+            f'phishing={skor["phishing"]:.0f} '
+            f'judi={skor["judi_online"]:.0f} '
+            f'suspicious={skor["suspicious"]:.0f}'
+            f'\nSumber: {detail_votes}'
+            f'\nML Prob: aman={proba[0]:.2f} phishing={proba[1]:.2f} judi={proba[2]:.2f}'
+        )
 
         return self._format(
-            kategori   = kategori,
-            confidence = confidence_sv,
-            method     = method,
+            kategori   = kategori_final,
+            confidence = confidence_final,
+            method     = 'voting_aggregation',
             detail     = detail,
             is_anomali = is_anomali,
             if_score   = if_score,
