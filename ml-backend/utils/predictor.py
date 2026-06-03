@@ -115,7 +115,6 @@ class NetraPredictor:
 
         if any(domain in url_lower for domain in WHITELIST):
             return True
-
         try:
             from urllib.parse import urlparse
             hostname = urlparse(url_lower).netloc
@@ -214,17 +213,24 @@ class NetraPredictor:
             return False, ''
         
     def _cek_pandi_tld(self, url):
-        PANDI_VERIFIED = {'ac.id', 'go.id', 'sch.id', 'mil.id'}
+        PANDI_STRICT = {'ac.id', 'go.id', 'sch.id', 'mil.id'}
+        PANDI_FLEX = {'co.id', 'or.id', 'net.id', 'web.id', 'my.id'}
 
         try:
             domain_utama = self._ekstrak_domain_utama(url)
-            for tld in PANDI_VERIFIED:
+
+            for tld in PANDI_STRICT:
                 if domain_utama.endswith('.' + tld):
-                    return True, tld
-            return False, ''
-        
+                    return True, tld, False 
+
+            for tld in PANDI_FLEX:
+                if domain_utama.endswith('.' + tld):
+                    return False, tld, True
+
+            return False, '', False
+
         except Exception:
-            return False, ''
+            return False, '', False
     
     def _cek_typosquatting(self, url):
         try:
@@ -411,28 +417,56 @@ class NetraPredictor:
 
         domain_utama = self._ekstrak_domain_utama(url)
 
-        # LAYER 1A — Whitelist
-        if domain_utama in WHITELIST or self._cek_whitelist(url):
-            return self._format(
-                kategori   = 'aman',
-                confidence = 99.0,
-                method     = 'rule_based_whitelist',
-                detail     = f'Domain terpercaya: {domain_utama}',
-                is_anomali = False,
-                if_score   = 0,
-                reach_info = None,
-            )
+        # WHITELIST_BYPASS: domain yang TIDAK perlu dicek reachability.
+        WHITELIST_BYPASS = {'localhost', 'localhost:5000', '127.0.0.1'}
 
-        # LAYER 1A+ — Trusted domain terverifikasi komunitas
-        if domain_utama in TRUSTED_DOMAINS:
+        # LAYER 1A — Whitelist & Trusted Domain
+        is_whitelisted = (domain_utama in WHITELIST or self._cek_whitelist(url))
+        is_trusted     = (domain_utama in TRUSTED_DOMAINS)
+
+        if is_whitelisted or is_trusted:
+            if domain_utama in WHITELIST_BYPASS:
+                return self._format(
+                    kategori   = 'aman',
+                    confidence = 99.0,
+                    method     = 'rule_based_whitelist',
+                    detail     = f'Domain lokal terpercaya: {domain_utama}',
+                    is_anomali = False,
+                    if_score   = 0,
+                    reach_info = None,
+                )
+
+            reach_info_wl = self._cek_reachability(url)
+
+            if not reach_info_wl['is_reachable']:
+                return self._format(
+                    kategori   = reach_info_wl['kategori_reach'],
+                    confidence = 0.0,
+                    method     = 'whitelist_unreachable',
+                    detail     = (
+                        f'Domain "{domain_utama}" ada di whitelist tetapi ' +
+                        f'tidak dapat diakses: {reach_info_wl["reach_detail"]}'
+                    ),
+                    is_anomali = False,
+                    if_score   = 0,
+                    reach_info = reach_info_wl,
+                )
+
+            confidence_wl = 99.0 if is_whitelisted else 85.0
+            method_wl     = 'rule_based_whitelist' if is_whitelisted else 'trusted_domain_verified'
+            detail_wl     = (
+                f'Domain terpercaya: {domain_utama}'
+                if is_whitelisted
+                else f'Domain {domain_utama} diverifikasi aman oleh komunitas pengguna'
+            )
             return self._format(
                 kategori   = 'aman',
-                confidence = 85.0,
-                method     = 'trusted_domain_verified',
-                detail     = f'Domain {domain_utama} diverifikasi aman oleh komunitas pengguna',
+                confidence = confidence_wl,
+                method     = method_wl,
+                detail     = detail_wl,
                 is_anomali = False,
                 if_score   = 0,
-                reach_info = None,
+                reach_info = reach_info_wl,
             )
 
         # LAYER 1B — Blacklist (kepastian berbahaya tertinggi)
@@ -474,7 +508,7 @@ class NetraPredictor:
             )
 
         # LAYER 1F — Deteksi TLD PANDI
-        is_pandi_safe, pandi_tld = self._cek_pandi_tld(url)
+        is_pandi_strict, pandi_tld, is_pandi_flex = self._cek_pandi_tld(url)
 
         # LAYER 2 — HTTP Reachability Check
         reach_info = self._cek_reachability(url)
@@ -490,14 +524,14 @@ class NetraPredictor:
                 reach_info = reach_info,
             )
 
-        # LAYER 1F (lanjutan) — Return AMAN untuk TLD PANDI yang sudah exist 
-        if is_pandi_safe:
+        # LAYER 1F (lanjutan) — Return AMAN untuk TLD PANDI strict yang sudah terbukti exist
+        if is_pandi_strict:
             return self._format(
                 kategori   = 'aman',
                 confidence = 97.0,
                 method     = 'rule_based_pandi_tld',
                 detail     = (f'Domain .{pandi_tld} diverifikasi PANDI — '
-                              f'tidak bisa didaftarkan sembarang pihak'),
+                              f'hanya institusi resmi yang bisa mendaftarkan'),
                 is_anomali = False,
                 if_score   = 0,
                 reach_info = reach_info,
@@ -519,6 +553,28 @@ class NetraPredictor:
 
         label_angka, confidence_sv, proba = self._prediksi_supervised(features_dict)
         kategori = self.LABEL_MAP[label_angka]
+
+        # LAYER 1F (post-ML) — Koreksi hasil ML untuk domain PANDI flex (co.id, or.id, dll)
+        pandi_flex_note = ''
+        if is_pandi_flex:
+            if kategori == 'phishing' and confidence_sv < 90.0:
+                confidence_sv_lama = confidence_sv
+                confidence_sv = max(confidence_sv - 20.0, 45.0)
+                if confidence_sv < CONFIDENCE_THRESHOLD:
+                    kategori = 'suspicious'
+                pandi_flex_note = (
+                    f'[PANDI .{pandi_tld}] ML: phishing {confidence_sv_lama:.1f}% → '
+                    f'diturunkan ke {confidence_sv:.1f}% karena domain .{pandi_tld} '
+                    f'terdaftar & reachable (kemungkinan false positive URL panjang)'
+                )
+            elif kategori == 'suspicious':
+                confidence_sv_lama = confidence_sv
+                confidence_sv = min(confidence_sv + 15.0, 75.0)
+                kategori = 'aman'
+                pandi_flex_note = (
+                    f'[PANDI .{pandi_tld}] ML: suspicious → naik ke aman '
+                    f'karena domain .{pandi_tld} terdaftar & reachable'
+                )
 
         # LAYER 4 — Isolation Forest (Unsupervised ML)
         is_anomali = False
@@ -582,6 +638,8 @@ class NetraPredictor:
             method = 'ml_supervised_only'
 
         detail = f'RF+LR Ensemble | Prob aman:{proba[0]:.2f} phishing:{proba[1]:.2f} judi:{proba[2]:.2f}'
+        if pandi_flex_note:
+            detail += f' | {pandi_flex_note}'
         if if_detail:
             detail += f' | {if_detail}'
 
