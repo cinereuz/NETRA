@@ -112,7 +112,27 @@ class NetraPredictor:
     # LAYER 1: Rule-Based
     def _cek_whitelist(self, url):
         url_lower = url.lower()
-        return any(domain in url_lower for domain in WHITELIST)
+
+        if any(domain in url_lower for domain in WHITELIST):
+            return True
+
+        try:
+            from urllib.parse import urlparse
+            hostname = urlparse(url_lower).netloc
+
+            if ':' in hostname:
+                hostname = hostname.split(':')[0]
+
+            hostname = hostname.replace('www.', '')
+
+            for domain in WHITELIST:
+                if hostname.endswith('.' + domain):
+                    return True
+
+        except Exception:
+            pass
+
+        return False
 
     def _cek_blacklist(self, url):
         url_lower = url.lower()
